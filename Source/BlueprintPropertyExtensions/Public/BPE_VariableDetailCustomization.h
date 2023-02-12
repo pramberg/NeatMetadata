@@ -17,7 +17,7 @@ public:
 	BPE_VariableDetailCustomization(UBlueprint* InBlueprint);
 
 	virtual void CustomizeDetails(IDetailLayoutBuilder& DetailLayout) override;
-
+	
 private:
 	TWeakObjectPtr<UBlueprint> Blueprint;
 };

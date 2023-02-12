@@ -49,23 +49,102 @@ BPE_VariableDetailCustomization::BPE_VariableDetailCustomization(UBlueprint* InB
 
 namespace
 {
-	void OnSetGameplayTagContainer(const FGameplayTag& Tag, TWeakFieldPtr<FStructProperty> Prop, TWeakObjectPtr<UBlueprint> Blueprint)
+	class FMetadataWrapper
 	{
-		if (!Prop.IsValid())
-			return;
+	public:
+		FMetadataWrapper(TWeakFieldPtr<FProperty> InProperty, TWeakObjectPtr<UBlueprint> InBlueprint)
+			: Property(InProperty), Blueprint(InBlueprint)
+		{
+		}
+		
+		void SetMetadata(FName Key, const FString& Value) const
+		{
+			FProperty* Prop;
+			FBPVariableDescription* Desc;
+			if (GetMetadataContainers(Prop, Desc))
+			{
+				Prop->SetMetaData(Key, *Value);
+				Desc->SetMetaData(Key,Value);
+			}
+		}
 
-		Prop->SetMetaData("Categories", Tag.ToString());
+		void SetOrRemoveMetadata(FName Key, const FString& Value) const
+		{
+			if (Value.IsEmpty())
+			{
+				RemoveMetadata(Key);
+			}
+			else
+			{
+				SetMetadata(Key, Value);
+			}
+		}
 
-		if (!Blueprint.IsValid() || !Prop.IsValid())
-			return;
+		void RemoveMetadata(FName Key) const
+		{
+			FProperty* Prop;
+			FBPVariableDescription* Desc;
+			if (GetMetadataContainers(Prop, Desc))
+			{
+				Prop->RemoveMetaData(Key);
+				Desc->RemoveMetaData(Key);
+			}
+		}
 
-		UBlueprint* BP = Blueprint.Get();
-		FProperty* Property = Prop.Get();
+		FString GetMetadata(FName Key) const
+		{
+			FProperty* Prop;
+			FBPVariableDescription* Desc;
+			if (GetMetadataContainers(Prop, Desc))
+			{
+				return Desc->HasMetaData(Key) ? Desc->GetMetaData(Key) : FString();
+			}
+			return FString();
+		}
+		
+		bool HasMetadata(FName Key) const
+		{
+			FProperty* Prop;
+			FBPVariableDescription* Desc;
+			if (GetMetadataContainers(Prop, Desc))
+			{
+				return Desc->HasMetaData(Key);
+			}
+			return false;
+		}
+		
+	private:
+		bool GetMetadataContainers(FProperty*& OutProp, FBPVariableDescription*& OutDesc) const
+		{
+			if (!Blueprint.IsValid() || !Property.IsValid())
+			{
+				return false;
+			}
+			
+			UBlueprint* BP = Blueprint.Get();
+			FProperty* Prop = Property.Get();
 
-		FBPVariableDescription* Desc = BP->NewVariables.FindByPredicate([Property](const FBPVariableDescription& InDesc) { return InDesc.VarName == Property->GetFName(); });
-		check(Desc);
+			FBPVariableDescription* Desc = BP->NewVariables
+				.FindByPredicate([Prop](const FBPVariableDescription& InDesc) { return InDesc.VarName == Prop->GetFName(); });
+			
+			if (!Desc)
+			{
+				return false;
+			}
 
-		Desc->SetMetaData("Categories",Tag.ToString());
+			OutProp = Property.Get();
+			OutDesc = Desc;
+
+			return true;
+		}
+		
+		TWeakFieldPtr<FProperty> Property;
+		TWeakObjectPtr<UBlueprint> Blueprint;
+	};
+	
+	void OnSetGameplayTagContainer(const FGameplayTag& Tag, FMetadataWrapper MetadataWrapper)
+	{
+		MetadataWrapper.SetMetadata("Categories", Tag.ToString());
 	}
 }
 
@@ -80,12 +159,86 @@ void BPE_VariableDetailCustomization::CustomizeDetails(IDetailLayoutBuilder& Det
 		if (!PropertyBeingCustomized.IsValid())
 			return;
 
-		if (FStructProperty* StructProp = CastField<FStructProperty>(PropertyBeingCustomized.Get()))
+		auto MetaWrapper = FMetadataWrapper{PropertyBeingCustomized, Blueprint};
+		
+		{
+			auto& Group = DetailLayout
+			   .EditCategory("Variable")
+			   .AddGroup("EditCondition", LOCTEXT("EditCondition", "EditCondition"));
+			
+			Group.HeaderRow()
+			[
+				SNew(SOverlay)
+				.ToolTipText(LOCTEXT("EditConditionGroupTooltip", "Metadata settings for conditionally disabling editing, or even hiding this property based on some condition."))
+				+SOverlay::Slot()
+				.VAlign(VAlign_Center)
+				[
+					SNew(STextBlock)
+					.Font(DetailLayout.GetDetailFont())
+					.Text(LOCTEXT("EditConditionHeader", "Edit Condition"))
+				]
+			];
+
+			static const FText EditConditionTooltip = LOCTEXT("EditConditionTooltip", "Condition used to enable editing this property. Note that the syntax is extensive, so you can do things like:\n"
+				"`MyFloatVariable > 0.0`, which would only enable editing your property if the value is greater than zero.");
+			Group.AddWidgetRow()
+				.NameContent()
+				[
+					SNew(STextBlock)
+					.ToolTipText(EditConditionTooltip)
+					.Font(DetailLayout.GetDetailFont())
+					.Text(LOCTEXT("EditConditionName", "Edit Condition"))
+				]
+				.ValueContent()
+				[
+					SNew(SEditableTextBox)
+					.ToolTipText(EditConditionTooltip)
+					.Text_Lambda([MetaWrapper]()
+					{
+						return FText::FromString(MetaWrapper.GetMetadata("EditCondition"));
+					})
+					.OnTextCommitted_Lambda([MetaWrapper](const FText& Text, ETextCommit::Type)
+					{
+						MetaWrapper.SetOrRemoveMetadata("EditCondition", Text.ToString());
+					})
+				];
+
+		
+			Group.AddWidgetRow()
+				.NameContent()
+				[
+					SNew(STextBlock)
+					.Font(DetailLayout.GetDetailFont())
+					.Text(LOCTEXT("EditConditionHidesName", "Edit Condition Hides"))
+				]
+				.ValueContent()
+				[
+					SNew(SCheckBox)
+					.IsChecked_Lambda([MetaWrapper]()
+					{
+						return MetaWrapper.HasMetadata("EditConditionHides") ? ECheckBoxState::Checked : ECheckBoxState::Unchecked;
+					})
+					.OnCheckStateChanged_Lambda([MetaWrapper](ECheckBoxState CheckState)
+					{
+						if (CheckState == ECheckBoxState::Checked)
+						{
+							MetaWrapper.SetMetadata("EditConditionHides", TEXT(""));
+						}
+						else
+						{
+							MetaWrapper.RemoveMetadata("EditConditionHides");
+						}
+					})
+				];
+		}
+
+		if (const FStructProperty* StructProp = CastField<FStructProperty>(PropertyBeingCustomized.Get()))
 		{
 			if (StructProp->Struct == FGameplayTag::StaticStruct() || StructProp->Struct == FGameplayTagContainer::StaticStruct())
 			{
-				auto& Group = DetailLayout.EditCategory("Variable")
-				.AddGroup("Gameplay Tag", LOCTEXT("GameplayTag Categories", "Categories (GameplayTag)"));
+				auto& Group = DetailLayout
+					.EditCategory("Variable")
+					.AddGroup("Gameplay Tag", LOCTEXT("Gameplay Tag Categories", "Categories (GameplayTag)"));
 
 				Group.HeaderRow()
 					[
@@ -99,24 +252,23 @@ void BPE_VariableDetailCustomization::CustomizeDetails(IDetailLayoutBuilder& Det
 							.Text(LOCTEXT("GameplayTag Categories", "GameplayTag Categories"))
 						]
 					];
-
-				auto WeakProp = TWeakFieldPtr<FStructProperty>(StructProp);
+				
 				const TSharedPtr<FGameplayTag> TagRef = MakeShared<FGameplayTag>();
 				TagRef->FromExportString(StructProp->GetMetaData("Categories"));
 				Group.AddWidgetRow()
 				[
 					IGameplayTagsEditorModule::Get()
-					.MakeGameplayTagWidget(FOnSetGameplayTag::CreateStatic(&OnSetGameplayTagContainer, WeakProp, Blueprint), TagRef)
+					.MakeGameplayTagWidget(FOnSetGameplayTag::CreateStatic(&OnSetGameplayTagContainer, MetaWrapper), TagRef)
 				];
 			}
 		}
-
+		
 		if (!PropertyBeingCustomized->GetMetaDataMap())
 			return;
 
 		auto& Group = DetailLayout
 			.EditCategory("Variable")
-			.AddGroup("Test", LOCTEXT("All Metadata", "All Metadata"));
+			.AddGroup("All Metadata", LOCTEXT("All Metadata", "All Metadata"));
 		
 		for (auto& [Key, Value] : *PropertyBeingCustomized->GetMetaDataMap())
 		{
@@ -132,12 +284,9 @@ void BPE_VariableDetailCustomization::CustomizeDetails(IDetailLayoutBuilder& Det
 					SNew(SEditableTextBox)
 					.Font(DetailLayout.GetDetailFont())
 					.Text(FText::FromString(Value))
-					.OnTextCommitted_Lambda([Key, PropertyBeingCustomized](const FText& Text, ETextCommit::Type)
+					.OnTextCommitted_Lambda([Key, MetaWrapper](const FText& Text, ETextCommit::Type)
 					{
-						if (PropertyBeingCustomized.IsValid())
-						{
-							PropertyBeingCustomized.Get()->SetMetaData(Key, *Text.ToString());
-						}
+						MetaWrapper.SetMetadata(Key, Text.ToString());
 					})
 				];
 		}
