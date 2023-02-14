@@ -1,4 +1,4 @@
-// Copyright Epic Games, Inc. All Rights Reserved.
+// Copyright Viktor Pramberg. All Rights Reserved.
 
 #include "BPE_Module.h"
 

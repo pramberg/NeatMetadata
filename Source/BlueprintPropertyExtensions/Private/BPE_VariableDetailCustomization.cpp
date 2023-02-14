@@ -1,9 +1,11 @@
-﻿// "// Copyright Viktor Pramberg. All Rights Reserved."
+﻿// Copyright Viktor Pramberg. All Rights Reserved.
 
 
 #include "BPE_VariableDetailCustomization.h"
 #include "DetailLayoutBuilder.h"
 #include "BlueprintEditorModule.h"
+#include "BPE_MetadataCollection.h"
+#include "BPE_Settings.h"
 #include "DetailCategoryBuilder.h"
 #include "DetailWidgetRow.h"
 #include "GameplayTagContainer.h"
@@ -11,6 +13,7 @@
 #include "IDetailGroup.h"
 #include "Widgets/Input/SEditableText.h"
 #include "Widgets/Input/SEditableTextBox.h"
+#include "BPE_MetadataWrapper.h"
 
 #define LOCTEXT_NAMESPACE "BPE_VariableDetailCustomization"
 
@@ -47,107 +50,6 @@ BPE_VariableDetailCustomization::BPE_VariableDetailCustomization(UBlueprint* InB
 {
 }
 
-namespace
-{
-	class FMetadataWrapper
-	{
-	public:
-		FMetadataWrapper(TWeakFieldPtr<FProperty> InProperty, TWeakObjectPtr<UBlueprint> InBlueprint)
-			: Property(InProperty), Blueprint(InBlueprint)
-		{
-		}
-		
-		void SetMetadata(FName Key, const FString& Value) const
-		{
-			FProperty* Prop;
-			FBPVariableDescription* Desc;
-			if (GetMetadataContainers(Prop, Desc))
-			{
-				Prop->SetMetaData(Key, *Value);
-				Desc->SetMetaData(Key,Value);
-			}
-		}
-
-		void SetOrRemoveMetadata(FName Key, const FString& Value) const
-		{
-			if (Value.IsEmpty())
-			{
-				RemoveMetadata(Key);
-			}
-			else
-			{
-				SetMetadata(Key, Value);
-			}
-		}
-
-		void RemoveMetadata(FName Key) const
-		{
-			FProperty* Prop;
-			FBPVariableDescription* Desc;
-			if (GetMetadataContainers(Prop, Desc))
-			{
-				Prop->RemoveMetaData(Key);
-				Desc->RemoveMetaData(Key);
-			}
-		}
-
-		FString GetMetadata(FName Key) const
-		{
-			FProperty* Prop;
-			FBPVariableDescription* Desc;
-			if (GetMetadataContainers(Prop, Desc))
-			{
-				return Desc->HasMetaData(Key) ? Desc->GetMetaData(Key) : FString();
-			}
-			return FString();
-		}
-		
-		bool HasMetadata(FName Key) const
-		{
-			FProperty* Prop;
-			FBPVariableDescription* Desc;
-			if (GetMetadataContainers(Prop, Desc))
-			{
-				return Desc->HasMetaData(Key);
-			}
-			return false;
-		}
-		
-	private:
-		bool GetMetadataContainers(FProperty*& OutProp, FBPVariableDescription*& OutDesc) const
-		{
-			if (!Blueprint.IsValid() || !Property.IsValid())
-			{
-				return false;
-			}
-			
-			UBlueprint* BP = Blueprint.Get();
-			FProperty* Prop = Property.Get();
-
-			FBPVariableDescription* Desc = BP->NewVariables
-				.FindByPredicate([Prop](const FBPVariableDescription& InDesc) { return InDesc.VarName == Prop->GetFName(); });
-			
-			if (!Desc)
-			{
-				return false;
-			}
-
-			OutProp = Property.Get();
-			OutDesc = Desc;
-
-			return true;
-		}
-		
-		TWeakFieldPtr<FProperty> Property;
-		TWeakObjectPtr<UBlueprint> Blueprint;
-	};
-	
-	void OnSetGameplayTagContainer(const FGameplayTag& Tag, FMetadataWrapper MetadataWrapper)
-	{
-		MetadataWrapper.SetMetadata("Categories", Tag.ToString());
-	}
-}
-
 void BPE_VariableDetailCustomization::CustomizeDetails(IDetailLayoutBuilder& DetailLayout)
 {
 	TArray<TWeakObjectPtr<UObject>> ObjectsBeingCustomized;
@@ -159,7 +61,35 @@ void BPE_VariableDetailCustomization::CustomizeDetails(IDetailLayoutBuilder& Det
 		if (!PropertyBeingCustomized.IsValid())
 			return;
 
-		auto MetaWrapper = FMetadataWrapper{PropertyBeingCustomized, Blueprint};
+		auto MetaWrapper = FBPE_MetadataWrapper{PropertyBeingCustomized, Blueprint};
+
+		for (auto Collection : GetDefault<UBPE_Settings>()->MetadataCollections)
+		{
+			if (Collection.IsNull())
+			{
+				continue;
+			}
+				
+			auto* Obj = Collection.LoadSynchronous()->GetDefaultObject<UBPE_MetadataCollection>();
+			if (Obj->IsRelevantForProperty(PropertyBeingCustomized.Get()))
+			{
+				auto& Category = DetailLayout.EditCategory("Variable");
+				if (TOptional<FText> Grp = Obj->GetGroup())
+				{
+					Category.AddGroup(FName(Grp->ToString()), *Grp).AddWidgetRow()
+					[
+						Obj->CreateWidget(MetaWrapper)
+					];
+				}
+				else
+				{
+					Category.AddCustomRow(FText::FromString(Obj->GetName()))
+					[
+						Obj->CreateWidget(MetaWrapper)
+					];
+				}
+			}
+		}
 		
 		{
 			auto& Group = DetailLayout
@@ -254,11 +184,14 @@ void BPE_VariableDetailCustomization::CustomizeDetails(IDetailLayoutBuilder& Det
 					];
 				
 				const TSharedPtr<FGameplayTag> TagRef = MakeShared<FGameplayTag>();
-				TagRef->FromExportString(StructProp->GetMetaData("Categories"));
+				TagRef->FromExportString(MetaWrapper.GetMetadata("Categories"));
 				Group.AddWidgetRow()
 				[
 					IGameplayTagsEditorModule::Get()
-					.MakeGameplayTagWidget(FOnSetGameplayTag::CreateStatic(&OnSetGameplayTagContainer, MetaWrapper), TagRef)
+					.MakeGameplayTagWidget(FOnSetGameplayTag::CreateLambda([MetaWrapper](const FGameplayTag& Tag)
+					{
+						MetaWrapper.SetMetadata("Categories", Tag.ToString());
+					}), TagRef)
 				];
 			}
 		}

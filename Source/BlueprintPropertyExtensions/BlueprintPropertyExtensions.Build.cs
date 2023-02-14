@@ -1,4 +1,4 @@
-// Copyright Epic Games, Inc. All Rights Reserved.
+// Copyright Viktor Pramberg. All Rights Reserved.
 
 using UnrealBuildTool;
 
@@ -23,6 +23,7 @@ public class BlueprintPropertyExtensions : ModuleRules
 				"SlateCore",
 				"GameplayTags",
 				"GameplayTagsEditor",
+				"DeveloperSettings"
 			}
 		);
 	}
