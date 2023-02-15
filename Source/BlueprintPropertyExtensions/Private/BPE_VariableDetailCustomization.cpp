@@ -74,20 +74,48 @@ void BPE_VariableDetailCustomization::CustomizeDetails(IDetailLayoutBuilder& Det
 			if (Obj->IsRelevantForProperty(PropertyBeingCustomized.Get()))
 			{
 				auto& Category = DetailLayout.EditCategory("Variable");
-				if (TOptional<FText> Grp = Obj->GetGroup())
+				const FText Grp = Obj->GetGroup().Get(Obj->GetClass()->GetDisplayNameText());
+				IDetailGroup& Group = Category.AddGroup(FName(Grp.ToString()), Grp);
+				
+				for (auto* Prop : TFieldRange<FProperty>(Obj->GetClass()))
 				{
-					Category.AddGroup(FName(Grp->ToString()), *Grp).AddWidgetRow()
-					[
-						Obj->CreateWidget(MetaWrapper)
-					];
+					if (!Obj->IsPropertyVisible(Prop->GetFName()))
+						continue;
+					
+					if (const auto Handle = DetailLayout.AddObjectPropertyData({Obj}, Prop->GetFName()))
+					{
+						using FDelegateType = TDelegate<void(const FPropertyChangedEvent&)>;
+						Handle->SetOnPropertyValueChangedWithData(FDelegateType::CreateLambda([Obj, MetaWrapper](const FPropertyChangedEvent& Event)
+						{
+							Obj->OnPropertyChanged(Event, MetaWrapper);
+						}));
+						Group.AddPropertyRow(Handle.ToSharedRef());
+					}
+
+					Obj->InitializeFromMetadata(MetaWrapper);
 				}
-				else
-				{
-					Category.AddCustomRow(FText::FromString(Obj->GetName()))
-					[
-						Obj->CreateWidget(MetaWrapper)
-					];
-				}
+				// const auto Handle = DetailLayout.AddObjectPropertyData({Obj}, FName("Categories"));
+				// if (Handle)
+				// {
+				// 	auto& Category = DetailLayout.EditCategory("Variable");
+				// 	Category.AddProperty(Handle);
+				// }
+				//
+				// auto& Category = DetailLayout.EditCategory("Variable");
+				// if (TOptional<FText> Grp = Obj->GetGroup())
+				// {
+				// 	Category.AddGroup(FName(Grp->ToString()), *Grp).AddWidgetRow()
+				// 	[
+				// 		Obj->CreateWidget(MetaWrapper)
+				// 	];
+				// }
+				// else
+				// {
+				// 	Category.AddCustomRow(FText::FromString(Obj->GetName()))
+				// 	[
+				// 		Obj->CreateWidget(MetaWrapper)
+				// 	];
+				// }
 			}
 		}
 		

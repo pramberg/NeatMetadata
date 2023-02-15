@@ -2,11 +2,15 @@
 
 
 #include "BPE_Settings.h"
-#include "BPE_MetadataCollection.h"
+#include "BPE_CollectionTypes.h"
 
 UBPE_Settings::UBPE_Settings()
 {
-	MetadataCollections.Add(UBPE_MetadataCollection_GameplayTagCategories::StaticClass());
-	MetadataCollections.Add(UBPE_MetadataCollection_EditCondition::StaticClass());
-	MetadataCollections.Add(UBPE_MetadataCollection_Units::StaticClass());
+	MetadataCollections = {
+		UBPE_MetadataCollection_GameplayTagCategories::StaticClass(),
+		UBPE_MetadataCollection_EditCondition::StaticClass(),
+		UBPE_MetadataCollection_Units::StaticClass(),
+		UBPE_MetadataCollection_Curves::StaticClass(),
+		UBPE_MetadataCollection_AssetBundles::StaticClass(),
+	};
 }

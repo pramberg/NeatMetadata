@@ -22,13 +22,14 @@ public:
 	virtual TSharedRef<SWidget> CreateWidget(const FBPE_MetadataWrapper& MetadataWrapper);
 	virtual bool IsRelevantForProperty(FProperty* InProperty) const;
 	virtual TOptional<FText> GetGroup() const;
-
+	virtual bool IsPropertyVisible(FName PropertyName);
 	virtual void InitializeFromMetadata(const FBPE_MetadataWrapper& MetadataWrapper);
+	virtual void OnPropertyChanged(const FPropertyChangedEvent& PropChanged, FBPE_MetadataWrapper MetadataWrapper);
+
+protected:
 	virtual FString GetValueForProperty(FProperty& Property) const;
 	virtual void SetValueForProperty(const FProperty& Property, const FString& Value);
 	virtual void InitializeValueForProperty(const FProperty& Property);
-	virtual void OnPropertyChanged(const FPropertyChangedEvent& PropChanged, FBPE_MetadataWrapper MetadataWrapper);
-	virtual bool IsPropertyVisible(FName PropertyName);
 	
 protected:
 	FFieldClass* PropertyClass;
@@ -45,48 +46,4 @@ public:
 protected:
 	UPROPERTY(EditDefaultsOnly)
 	TArray<TObjectPtr<UScriptStruct>> Structs;
-};
-
-UCLASS(meta=(DisplayName = "Gameplay Tag Categories"))
-class UBPE_MetadataCollection_GameplayTagCategories : public UBPE_MetadataCollectionStruct
-{
-	GENERATED_BODY()
-
-public:
-	UBPE_MetadataCollection_GameplayTagCategories();
-	virtual FString GetValueForProperty(FProperty& Property) const override;
-	virtual void SetValueForProperty(const FProperty& Property, const FString& Value) override;
-	
-public:
-	UPROPERTY(EditAnywhere)
-	FGameplayTagContainer Categories;
-};
-
-UCLASS(meta=(DisplayName = "Edit Condition"))
-class UBPE_MetadataCollection_EditCondition : public UBPE_MetadataCollection
-{
-	GENERATED_BODY()
-
-public:
-	UPROPERTY(EditAnywhere)
-	FString EditCondition;
-
-	UPROPERTY(EditAnywhere)
-	bool EditConditionHides;
-
-	UPROPERTY(EditAnywhere)
-	bool InlineEditConditionToggle;
-};
-
-UCLASS(meta=(DisplayName = "Units"))
-class UBPE_MetadataCollection_Units : public UBPE_MetadataCollection
-{
-	GENERATED_BODY()
-
-public:
-	UPROPERTY(EditAnywhere)
-	EUnit Units;
-
-	UPROPERTY(EditAnywhere)
-	EUnit ForceUnits;
 };
