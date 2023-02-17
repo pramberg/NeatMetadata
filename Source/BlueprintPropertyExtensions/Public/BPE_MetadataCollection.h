@@ -3,8 +3,6 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameplayTagContainer.h"
-#include "Math/UnitConversion.h"
 #include "BPE_MetadataCollection.generated.h"
 
 class FBPE_MetadataWrapper;
@@ -19,18 +17,24 @@ class BLUEPRINTPROPERTYEXTENSIONS_API UBPE_MetadataCollection : public UObject
 
 public:
 	UBPE_MetadataCollection();
-	virtual TSharedRef<SWidget> CreateWidget(const FBPE_MetadataWrapper& MetadataWrapper);
+	
+	void Setup(const FBPE_MetadataWrapper& MetadataWrapper);
+	
+	using FForEachVisiblePropertySignature = void(const FProperty&);
+	void ForEachVisibleProperty(TFunctionRef<FForEachVisiblePropertySignature> Functor);
+
 	virtual bool IsRelevantForProperty(FProperty* InProperty) const;
 	virtual TOptional<FText> GetGroup() const;
-	virtual bool IsPropertyVisible(FName PropertyName);
-	virtual void InitializeFromMetadata(const FBPE_MetadataWrapper& MetadataWrapper);
 	virtual void OnPropertyChanged(const FPropertyChangedEvent& PropChanged, FBPE_MetadataWrapper MetadataWrapper);
 
 protected:
-	virtual FString GetValueForProperty(FProperty& Property) const;
+	static inline TOptional<FString> NoPropertyValue = TOptional<FString>();
+	
+	virtual TOptional<FString> GetValueForProperty(FProperty& Property) const;
 	virtual void SetValueForProperty(const FProperty& Property, const FString& Value);
 	virtual void InitializeValueForProperty(const FProperty& Property);
-	
+	virtual bool IsPropertyVisible(const FProperty& Property);
+
 protected:
 	FFieldClass* PropertyClass;
 };

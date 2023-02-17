@@ -3,6 +3,8 @@
 
 #include "BPE_MetadataWrapper.h"
 
+#include "Kismet2/BlueprintEditorUtils.h"
+
 FBPE_MetadataWrapper::FBPE_MetadataWrapper(TWeakFieldPtr<FProperty> InProperty, TWeakObjectPtr<UBlueprint> InBlueprint): Property(InProperty), Blueprint(InBlueprint)
 {
 }
@@ -13,8 +15,7 @@ void FBPE_MetadataWrapper::SetMetadata(FName Key, const FString& Value) const
 	FBPVariableDescription* Desc;
 	if (GetMetadataContainers(Prop, Desc))
 	{
-		Prop->SetMetaData(Key, *Value);
-		Desc->SetMetaData(Key,Value);
+		FBlueprintEditorUtils::SetBlueprintVariableMetaData(Blueprint.Get(), Prop->GetFName(), nullptr, Key, Value);
 	}
 }
 
@@ -36,8 +37,7 @@ void FBPE_MetadataWrapper::RemoveMetadata(FName Key) const
 	FBPVariableDescription* Desc;
 	if (GetMetadataContainers(Prop, Desc))
 	{
-		Prop->RemoveMetaData(Key);
-		Desc->RemoveMetaData(Key);
+		FBlueprintEditorUtils::RemoveBlueprintVariableMetaData(Blueprint.Get(), Prop->GetFName(), nullptr, Key);
 	}
 }
 

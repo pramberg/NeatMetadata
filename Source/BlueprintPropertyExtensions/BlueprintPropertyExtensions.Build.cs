@@ -23,7 +23,8 @@ public class BlueprintPropertyExtensions : ModuleRules
 				"SlateCore",
 				"GameplayTags",
 				"GameplayTagsEditor",
-				"DeveloperSettings"
+				"DeveloperSettings",
+				"UnrealEd",
 			}
 		);
 	}

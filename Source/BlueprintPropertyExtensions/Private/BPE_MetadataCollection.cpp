@@ -1,44 +1,10 @@
 // Copyright Viktor Pramberg. All Rights Reserved.
-
-
 #include "BPE_MetadataCollection.h"
-
 #include "BPE_MetadataWrapper.h"
 
 UBPE_MetadataCollection::UBPE_MetadataCollection()
 {
 	PropertyClass = FProperty::StaticClass();
-}
-
-TSharedRef<SWidget> UBPE_MetadataCollection::CreateWidget(const FBPE_MetadataWrapper& MetadataWrapper)
-{
-	InitializeFromMetadata(MetadataWrapper);
-	
-	FPropertyEditorModule& PropertyEditorModule = FModuleManager::GetModuleChecked<FPropertyEditorModule>("PropertyEditor");
-	FDetailsViewArgs DetailsViewArgs;
-	DetailsViewArgs.NameAreaSettings = FDetailsViewArgs::HideNameArea;
-	DetailsViewArgs.bHideSelectionTip = true;
-	DetailsViewArgs.bShowScrollBar = false;
-	DetailsViewArgs.bAllowSearch = false;
-	DetailsViewArgs.bShowOptions = false;
-	DetailsViewArgs.bShowPropertyMatrixButton = false;
-	//DetailsViewArgs.NotifyHook = this;
-	auto DetailsView = PropertyEditorModule.CreateDetailView(DetailsViewArgs);
-	
-	DetailsView->GetIsPropertyVisibleDelegate().BindWeakLambda(this, [this](const FPropertyAndParent& PropertyAndParent)
-	{
-		return IsPropertyVisible(PropertyAndParent.Property.GetFName());
-	});
-
-	DetailsView->GetIsCustomRowVisibleDelegate().BindWeakLambda(this, [this](FName InRowName, FName /*InParentName*/)
-	{
-		return IsPropertyVisible(InRowName);
-	});
-
-	DetailsView->OnFinishedChangingProperties().AddUObject(this, &ThisClass::OnPropertyChanged, MetadataWrapper);
-	DetailsView->SetObject(this);
-	
-	return DetailsView;
 }
 
 bool UBPE_MetadataCollection::IsRelevantForProperty(FProperty* InProperty) const
@@ -51,7 +17,7 @@ TOptional<FText> UBPE_MetadataCollection::GetGroup() const
 	return {};
 }
 
-void UBPE_MetadataCollection::InitializeFromMetadata(const FBPE_MetadataWrapper& MetadataWrapper)
+void UBPE_MetadataCollection::Setup(const FBPE_MetadataWrapper& MetadataWrapper)
 {
 	for (const auto* Property : TFieldRange<FProperty>(GetClass()))
 	{
@@ -60,15 +26,8 @@ void UBPE_MetadataCollection::InitializeFromMetadata(const FBPE_MetadataWrapper&
 
 		if (MetadataWrapper.HasMetadata(Property->GetFName()))
 		{
-			if (const FBoolProperty* BoolProp = CastField<FBoolProperty>(Property))
-			{
-				BoolProp->SetPropertyValue_InContainer(this, true);
-			}
-			else
-			{
-				const FString Value = MetadataWrapper.GetMetadata(Property->GetFName());
-				SetValueForProperty(*Property, Value);
-			}
+			const FString Value = MetadataWrapper.GetMetadata(Property->GetFName());
+			SetValueForProperty(*Property, Value);
 		}
 		else
 		{
@@ -77,8 +36,30 @@ void UBPE_MetadataCollection::InitializeFromMetadata(const FBPE_MetadataWrapper&
 	}
 }
 
-FString UBPE_MetadataCollection::GetValueForProperty(FProperty& Property) const
+void UBPE_MetadataCollection::ForEachVisibleProperty(TFunctionRef<FForEachVisiblePropertySignature> Functor)
 {
+	for (const FProperty* Prop : TFieldRange<FProperty>(GetClass()))
+	{
+		if (!IsPropertyVisible(*Prop))
+		{
+			continue;
+		}
+
+		Functor(*Prop);
+	}
+}
+
+TOptional<FString> UBPE_MetadataCollection::GetValueForProperty(FProperty& Property) const
+{
+	if (const FBoolProperty* AsBool = CastField<FBoolProperty>(&Property))
+	{
+		if (AsBool->GetPropertyValue_InContainer(this))
+		{
+			return FString();
+		}
+		return {};
+	}
+	
 	FString Value;
 	Property.ExportText_InContainer(0, Value, this, this, nullptr, 0);
 	return Value;
@@ -86,45 +67,43 @@ FString UBPE_MetadataCollection::GetValueForProperty(FProperty& Property) const
 
 void UBPE_MetadataCollection::SetValueForProperty(const FProperty& Property, const FString& Value)
 {
-	Property.ImportText_InContainer(*Value, this, this, 0);
+	if (const FBoolProperty* BoolProp = CastField<FBoolProperty>(&Property))
+	{
+		BoolProp->SetPropertyValue_InContainer(this, true);
+	}
+	else
+	{
+		Property.ImportText_InContainer(*Value, this, this, 0);
+	}
 }
 
 void UBPE_MetadataCollection::InitializeValueForProperty(const FProperty& Property)
 {
-	Property.InitializeValue_InContainer(this);
+	for (int32 Idx = 0; Idx < Property.ArrayDim; Idx++)
+	{
+		uint8* DataPtr = Property.ContainerPtrToValuePtr<uint8>(this, Idx);
+		const uint8* DefaultValue = Property.ContainerPtrToValuePtrForDefaults<uint8>(GetClass(), GetArchetype(), Idx);
+		Property.CopyCompleteValue(DataPtr, DefaultValue);
+	}
 }
 
 void UBPE_MetadataCollection::OnPropertyChanged(const FPropertyChangedEvent& PropChanged, FBPE_MetadataWrapper MetadataWrapper)
 {
 	const FName PropertyName = PropChanged.Property->GetFName();
-	if (const FBoolProperty* AsBool = CastField<FBoolProperty>(PropChanged.Property))
+	if (const auto OptionalValue = GetValueForProperty(*PropChanged.Property))
 	{
-		if (AsBool->GetPropertyValue_InContainer(this))
-		{
-			MetadataWrapper.SetMetadata(PropertyName, TEXT(""));
-		}
-		else
-		{
-			MetadataWrapper.RemoveMetadata(PropertyName);
-		}
+		MetadataWrapper.SetMetadata(PropertyName, *OptionalValue);
 	}
 	else
 	{
-		MetadataWrapper.SetMetadata(PropertyName, GetValueForProperty(*PropChanged.Property));
+		MetadataWrapper.RemoveMetadata(PropertyName);
 	}
 }
 
-bool UBPE_MetadataCollection::IsPropertyVisible(FName PropertyName)
+bool UBPE_MetadataCollection::IsPropertyVisible(const FProperty& Property)
 {
-	const auto* Prop = FindFProperty<FProperty>(GetClass(), PropertyName);
-	return Prop ? !Prop->HasAnyPropertyFlags(CPF_DisableEditOnInstance) : true;
+	return !Property.HasAnyPropertyFlags(CPF_DisableEditOnInstance);
 }
-
-/*
- * *****************************
- * UBPE_MetadataCollectionStruct
- * *****************************
- */
 
 bool UBPE_MetadataCollectionStruct::IsRelevantForProperty(FProperty* InProperty) const
 {

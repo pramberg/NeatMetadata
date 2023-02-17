@@ -13,12 +13,13 @@ UBPE_MetadataCollection_GameplayTagCategories::UBPE_MetadataCollection_GameplayT
 	};
 }
 
-FString UBPE_MetadataCollection_GameplayTagCategories::GetValueForProperty(FProperty& Property) const
+TOptional<FString> UBPE_MetadataCollection_GameplayTagCategories::GetValueForProperty(FProperty& Property) const
 {
 	if (Property.GetFName() == GET_MEMBER_NAME_CHECKED(ThisClass, Categories))
 	{
 		// ToStringSimple adds a ", ". The space causes issues when parsing multiple tags...
-		return Categories.ToStringSimple().Replace(TEXT(" "), TEXT(""));
+		const FString Result = Categories.ToStringSimple().Replace(TEXT(" "), TEXT(""));
+		return Result.IsEmpty() ? NoPropertyValue : Result;
 	}
 	
 	return Super::GetValueForProperty(Property);
@@ -43,6 +44,40 @@ void UBPE_MetadataCollection_GameplayTagCategories::SetValueForProperty(const FP
 }
 #pragma endregion 
 
+#pragma region Units
+TOptional<FString> UBPE_MetadataCollection_Units::GetValueForProperty(FProperty& Property) const
+{
+	if (Property.GetFName() == GET_MEMBER_NAME_CHECKED(ThisClass, Units) && Units == EUnit::Unspecified)
+	{
+		return NoPropertyValue;
+	}
+	
+	if (Property.GetFName() == GET_MEMBER_NAME_CHECKED(ThisClass, ForceUnits) && ForceUnits == EUnit::Unspecified)
+	{
+		return NoPropertyValue;
+	}
+	
+	return Super::GetValueForProperty(Property);
+}
+
+void UBPE_MetadataCollection_Units::SetValueForProperty(const FProperty& Property, const FString& Value)
+{
+	if (Property.GetFName() == GET_MEMBER_NAME_CHECKED(ThisClass, Units) && Value.IsEmpty())
+	{
+		Units = EUnit::Unspecified;
+		return;
+	}
+	
+	if (Property.GetFName() == GET_MEMBER_NAME_CHECKED(ThisClass, ForceUnits) && Value.IsEmpty())
+	{
+		ForceUnits = EUnit::Unspecified;
+		return;
+	}
+	
+	Super::SetValueForProperty(Property, Value);
+}
+#pragma endregion 
+
 #pragma region Curves
 UBPE_MetadataCollection_Curves::UBPE_MetadataCollection_Curves()
 {
@@ -61,7 +96,7 @@ bool UBPE_MetadataCollection_AssetBundles::IsRelevantForProperty(FProperty* InPr
 	return bIsApplicableProperty && InProperty->GetOwnerClass()->IsChildOf<UPrimaryDataAsset>();
 }
 
-FString UBPE_MetadataCollection_AssetBundles::GetValueForProperty(FProperty& Property) const
+TOptional<FString> UBPE_MetadataCollection_AssetBundles::GetValueForProperty(FProperty& Property) const
 {
 	if (Property.GetFName() == GET_MEMBER_NAME_CHECKED(ThisClass, AssetBundles))
 	{

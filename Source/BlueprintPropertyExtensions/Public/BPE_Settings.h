@@ -19,6 +19,17 @@ class BLUEPRINTPROPERTYEXTENSIONS_API UBPE_Settings : public UDeveloperSettings
 public:
 	UBPE_Settings();
 	
+	using FForEachCollectionSignature = void(UBPE_MetadataCollection&);
+	void ForEachCollection(TFunctionRef<FForEachCollectionSignature> Functor) const;
+	
+protected:
+	void RebuildMetadataCollections();
+	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
+	virtual void PostInitProperties() override;
+
 	UPROPERTY(Config, EditDefaultsOnly)
 	TArray<TSoftClassPtr<UBPE_MetadataCollection>> MetadataCollections;
+	
+	UPROPERTY()
+	TArray<TObjectPtr<UBPE_MetadataCollection>> MetadataCollectionInstances;
 };
