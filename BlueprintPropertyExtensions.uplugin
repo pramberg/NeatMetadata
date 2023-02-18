@@ -4,21 +4,27 @@
 	"VersionName": "1.0",
 	"FriendlyName": "Blueprint Property Extensions",
 	"Description": "Extension to blueprint properties to allow various metadata to be used that is otherwise only available in C++.",
-	"Category": "Other",
+	"Category": "Editor",
 	"CreatedBy": "Viktor Pramberg",
 	"CreatedByURL": "https://viktorpramberg.com",
-	"DocsURL": "",
+	"DocsURL": "https://github.com/pramberg/BlueprintPropertyExtensions/wiki",
 	"MarketplaceURL": "",
-	"SupportURL": "",
+	"SupportURL": "https://github.com/pramberg/BlueprintPropertyExtensions/issues",
 	"CanContainContent": true,
 	"IsBetaVersion": false,
-	"IsExperimentalVersion": false,
+	"IsExperimentalVersion": true,
 	"Installed": false,
 	"Modules": [
 		{
 			"Name": "BlueprintPropertyExtensions",
 			"Type": "Editor",
 			"LoadingPhase": "PostEngineInit"
+		}
+	],
+	"Plugins": [
+		{
+			"Name": "GameplayTagsEditor",
+			"Enabled": true
 		}
 	]
 }
