@@ -30,13 +30,16 @@ void UBPE_Settings::RebuildMetadataCollections()
 
 	for (TSoftClassPtr<UBPE_MetadataCollection> SoftClass : MetadataCollections)
 	{
-		if (!ensure(!SoftClass.IsNull()))
+		if (SoftClass.IsNull())
 		{
 			continue;
 		}
 
 		const UClass* LoadedClass = SoftClass.LoadSynchronous();
-		MetadataCollectionInstances.Add(NewObject<UBPE_MetadataCollection>(this, LoadedClass));
+		if (ensure(LoadedClass))
+		{
+			MetadataCollectionInstances.Add(NewObject<UBPE_MetadataCollection>(this, LoadedClass));
+		}
 	}
 }
 
