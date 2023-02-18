@@ -7,11 +7,14 @@
 UBPE_Settings::UBPE_Settings()
 {
 	MetadataCollections = {
-		UBPE_MetadataCollection_GameplayTagCategories::StaticClass(),
+		UBPE_MetadataCollection_TitleProperty::StaticClass(),
 		UBPE_MetadataCollection_EditCondition::StaticClass(),
 		UBPE_MetadataCollection_Units::StaticClass(),
+		UBPE_MetadataCollection_GameplayTagCategories::StaticClass(),
 		UBPE_MetadataCollection_Curves::StaticClass(),
 		UBPE_MetadataCollection_AssetBundles::StaticClass(),
+		UBPE_MetadataCollection_Color::StaticClass(),
+		UBPE_MetadataCollection_GetOptions::StaticClass(),
 	};
 }
 
