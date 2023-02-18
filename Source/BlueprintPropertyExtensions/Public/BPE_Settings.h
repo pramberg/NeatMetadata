@@ -27,7 +27,7 @@ protected:
 	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
 	virtual void PostInitProperties() override;
 
-	UPROPERTY(Config, EditDefaultsOnly)
+	UPROPERTY(Config, EditDefaultsOnly, meta = (ShowDisplayNames))
 	TArray<TSoftClassPtr<UBPE_MetadataCollection>> MetadataCollections;
 	
 	UPROPERTY()
