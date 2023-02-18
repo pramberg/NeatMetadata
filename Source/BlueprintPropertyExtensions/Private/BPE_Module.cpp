@@ -1,27 +1,34 @@
 // Copyright Viktor Pramberg. All Rights Reserved.
-
 #include "BPE_Module.h"
 
 #include "BlueprintEditorModule.h"
 #include "BPE_VariableDetailCustomization.h"
+#include "Modules/ModuleManager.h"
 
 #define LOCTEXT_NAMESPACE "FBlueprintPropertyExtensionsModule"
 
 DEFINE_LOG_CATEGORY(LogBlueprintPropertyExtensions);
 
-void FBPE_Module::StartupModule()
+class FBPE_Module : public IModuleInterface
 {
-	FBlueprintEditorModule& BlueprintEditorModule = FModuleManager::GetModuleChecked<FBlueprintEditorModule>("Kismet");
-	BlueprintVariableCustomizationHandle = BlueprintEditorModule.RegisterVariableCustomization(FProperty::StaticClass(), FOnGetVariableCustomizationInstance::CreateStatic(&BPE_VariableDetailCustomization::MakeInstance));
-}
-
-void FBPE_Module::ShutdownModule()
-{
-	if (FBlueprintEditorModule* BlueprintEditorModule = FModuleManager::GetModulePtr<FBlueprintEditorModule>("Kismet"))
+public:
+	virtual void StartupModule() override
 	{
-		BlueprintEditorModule->UnregisterVariableCustomization(FProperty::StaticClass(), BlueprintVariableCustomizationHandle);
+		FBlueprintEditorModule& BlueprintEditorModule = FModuleManager::GetModuleChecked<FBlueprintEditorModule>("Kismet");
+		BlueprintVariableCustomizationHandle = BlueprintEditorModule.RegisterVariableCustomization(FProperty::StaticClass(), FOnGetVariableCustomizationInstance::CreateStatic(&BPE_VariableDetailCustomization::MakeInstance));
 	}
-}
+	
+	virtual void ShutdownModule() override
+	{
+		if (FBlueprintEditorModule* BlueprintEditorModule = FModuleManager::GetModulePtr<FBlueprintEditorModule>("Kismet"))
+		{
+			BlueprintEditorModule->UnregisterVariableCustomization(FProperty::StaticClass(), BlueprintVariableCustomizationHandle);
+		}
+	}
+
+private:
+	FDelegateHandle BlueprintVariableCustomizationHandle;
+};
 
 #undef LOCTEXT_NAMESPACE
 	
