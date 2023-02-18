@@ -57,8 +57,8 @@ void BPE_VariableDetailCustomization::CustomizeDetails(IDetailLayoutBuilder& Det
 	if (ObjectsBeingCustomized.Num() > 0)
 	{
 		UPropertyWrapper* PropertyWrapper = Cast<UPropertyWrapper>(ObjectsBeingCustomized[0].Get());
-		const TWeakFieldPtr<FProperty> PropertyBeingCustomized = PropertyWrapper ? PropertyWrapper->GetProperty() : nullptr;
-		if (!PropertyBeingCustomized.IsValid())
+		FProperty* PropertyBeingCustomized = PropertyWrapper ? PropertyWrapper->GetProperty() : nullptr;
+		if (!PropertyBeingCustomized)
 			return;
 
 		auto MetaWrapper = FBPE_MetadataWrapper{PropertyBeingCustomized, Blueprint};
@@ -76,39 +76,66 @@ void BPE_VariableDetailCustomization::CustomizeDetails(IDetailLayoutBuilder& Det
 		
 		IDetailCategoryBuilder& MetadataCategory = DetailLayout.EditCategory("Metadata", LOCTEXT("MetadataCategoryTitle", "Metadata"));
 		MetadataCategory.SetSortOrder(MetadataCategory.GetSortOrder() - 1);
+
+		TMap<FName, IDetailGroup*> GroupNameToGroup;
 		
 		GetDefault<UBPE_Settings>()->ForEachCollection([&](UBPE_MetadataCollection& Collection)
 		{
-			if (!Collection.IsRelevantForProperty(PropertyBeingCustomized.Get()))
+			if (!Collection.IsRelevantForProperty(*PropertyBeingCustomized))
 			{
 				return;
 			}
+
+			const UClass& CollectionClass = *Collection.GetClass();
+			const bool bNoGroup = CollectionClass.HasMetaData(TEXT("NoGroup"));
 			
-			const FText Grp = Collection.GetGroup().Get(Collection.GetClass()->GetDisplayNameText());
-			IDetailGroup& Group = MetadataCategory.AddGroup(FName(Grp.ToString()), Grp);
+			IDetailGroup* Group = nullptr;
 
-			// Customize the header to allow tooltips on the group itself.
-			Group.HeaderRow()
-			[
-				SNew(SBox)
-				.ToolTipText(Collection.GetClass()->GetToolTipText())
-				.VAlign(VAlign_Center)
-				[
-					SNew(STextBlock)
-					.Font(DetailLayout.GetDetailFont())
-					.Text(Grp)
-				]
-			];
+			if (!bNoGroup)
+			{
+				const FString* GroupPtr = CollectionClass.FindMetaData(TEXT("Group"));
+				const FName GroupName = GroupPtr ? FName(*GroupPtr) : CollectionClass.GetFName();
+				if (IDetailGroup** FoundGroup = GroupNameToGroup.Find(GroupName))
+				{
+					Group = *FoundGroup;
+				}
 
-			Collection.Setup(MetaWrapper);
+				if (!Group)
+				{
+					const FText GroupDisplayName = GroupPtr ? FText::FromString(*GroupPtr) : CollectionClass.GetDisplayNameText();
+					Group = &MetadataCategory.AddGroup(GroupName, GroupDisplayName);
+
+				   // Customize the header to allow tooltips on the group itself.
+				   Group->HeaderRow()
+				   [
+					   SNew(SBox)
+					   .ToolTipText(GroupPtr ? FText() : CollectionClass.GetToolTipText())
+					   .VAlign(VAlign_Center)
+					   [
+						   SNew(STextBlock)
+						   .Font(DetailLayout.GetDetailFont())
+						   .Text(GroupDisplayName)
+					   ]
+				   ];
+
+					GroupNameToGroup.Add(GroupName, Group);
+				}
+			}
+
+			Collection.InitializeFromMetadata(MetaWrapper);
 
 			Collection.ForEachVisibleProperty([&](const FProperty& Property)
 			{
 				if (const TSharedPtr<IPropertyHandle> Handle = DetailLayout.AddObjectPropertyData({ &Collection }, Property.GetFName()))
 				{
-					using FDelegateType = TDelegate<void(const FPropertyChangedEvent&)>;
-					Handle->SetOnPropertyValueChangedWithData(FDelegateType::CreateUObject(&Collection, &UBPE_MetadataCollection::OnPropertyChanged, MetaWrapper));
-					Group.AddPropertyRow(Handle.ToSharedRef());
+					if (Group)
+					{
+						Group->AddPropertyRow(Handle.ToSharedRef());
+					}
+					else
+					{
+						MetadataCategory.AddProperty(Handle);
+					}
 				}
 			});
 		});

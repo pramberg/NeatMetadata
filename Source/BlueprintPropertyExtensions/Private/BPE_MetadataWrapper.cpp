@@ -63,6 +63,16 @@ bool FBPE_MetadataWrapper::HasMetadata(FName Key) const
 	return false;
 }
 
+const FProperty* FBPE_MetadataWrapper::GetProperty() const
+{
+	return Property.Get();
+}
+
+UBlueprint* FBPE_MetadataWrapper::GetBlueprint() const
+{
+	return Blueprint.Get();
+}
+
 bool FBPE_MetadataWrapper::GetMetadataContainers(FProperty*& OutProp, FBPVariableDescription*& OutDesc) const
 {
 	if (!Blueprint.IsValid() || !Property.IsValid())

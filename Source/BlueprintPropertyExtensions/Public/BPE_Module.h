@@ -3,8 +3,9 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "BlueprintEditorModule.h"
 #include "Modules/ModuleManager.h"
+
+DECLARE_LOG_CATEGORY_EXTERN(LogBlueprintPropertyExtensions, Log, All);
 
 class FBPE_Module : public IModuleInterface
 {

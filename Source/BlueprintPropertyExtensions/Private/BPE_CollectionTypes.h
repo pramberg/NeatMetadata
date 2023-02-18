@@ -9,6 +9,7 @@
 #include "BPE_CollectionTypes.generated.h"
 
 
+
 /**
  * Controls what "Categories", or root gameplay tags can be selected on a GameplayTag
  * or GameplayTagContainer property. Use this if you only want specific tags to be selectable.
@@ -31,6 +32,8 @@ protected:
 	virtual TOptional<FString> GetValueForProperty(FProperty& Property) const override;
 	virtual void SetValueForProperty(const FProperty& Property, const FString& Value) override;
 };
+
+
 
 /**
  * Controls what conditions need to be met in order to edit the current property. Also allows for hiding
@@ -64,13 +67,15 @@ public:
 	bool InlineEditConditionToggle;
 };
 
+
+
 /**
  * Controls what unit this property represents. For example, a float variable can represent
  * distance, angles or speed. By specifying a unit, you can make it easier for a user to
  * understand the use of the property.
  */
 UCLASS(meta=(DisplayName = "Units"))
-class UBPE_MetadataCollection_Units : public UBPE_MetadataCollection
+class UBPE_MetadataCollection_Units : public UBPE_MetadataCollectionStruct
 {
 	GENERATED_BODY()
 
@@ -78,7 +83,7 @@ public:
 	// Specifies what unit this property represents. The value of the property is automatically converted
 	// from the user's preferred unit for that value type. If you specify `Centimeter` and the user's preferred
 	// unit is `Yards`, Unreal will handle the conversion from yards to centimeters automatically.
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, meta = (EditCondition = "ForceUnits == EUnit::Unspecified", EditConditionHides))
 	EUnit Units = EUnit::Unspecified;
 
 	// Forces the unit of this property to be the selected type, regardless of user preferences.
@@ -91,13 +96,14 @@ public:
 	EUnit ForceUnits = EUnit::Unspecified;
 
 protected:
+	virtual bool IsRelevantForContainedProperty(const FProperty& InProperty) const override;
 	virtual TOptional<FString> GetValueForProperty(FProperty& Property) const override;
 	virtual void SetValueForProperty(const FProperty& Property, const FString& Value) override;
 };
 
-/**
- * Allows you to specify the name of the axes on runtime curve properties.
- */
+
+
+/** Allows you to specify the name of the axes on runtime curve properties. */
 UCLASS(meta=(DisplayName = "Curves"))
 class UBPE_MetadataCollection_Curves : public UBPE_MetadataCollectionStruct
 {
@@ -115,23 +121,89 @@ public:
 	FString YAxisName;
 };
 
+
+
 /**
- * Controls what Asset Bundles this property belongs to. Doing that will 
+ * Controls what Asset Bundles this property belongs to.
+ * TODO: Improve documentation.
  *
  * @see https://docs.unrealengine.com/5.1/en-US/asset-management-in-unreal-engine/#assetbundles
  * @see UAssetManager::InitializeAssetBundlesFromMetadata
  */
 UCLASS(meta=(DisplayName = "Asset Bundles"))
-class UBPE_MetadataCollection_AssetBundles : public UBPE_MetadataCollectionStruct
+class UBPE_MetadataCollection_AssetBundles : public UBPE_MetadataCollection
 {
 	GENERATED_BODY()
 
 public:
+	// The bundles to add this property to.
 	UPROPERTY(EditAnywhere)
 	TArray<FString> AssetBundles;
 
 protected:
-	virtual bool IsRelevantForProperty(FProperty* InProperty) const override;
+	virtual bool IsRelevantForContainedProperty(const FProperty& InProperty) const override;
 	virtual TOptional<FString> GetValueForProperty(FProperty& Property) const override;
 	virtual void SetValueForProperty(const FProperty& Property, const FString& Value) override;
+};
+
+
+
+/** Metadata related to color properties. Currently only allows you to hide the alpha channel. */
+UCLASS(meta=(DisplayName = "Color"))
+class UBPE_MetadataCollection_Color : public UBPE_MetadataCollectionStruct
+{
+	GENERATED_BODY()
+
+public:
+	UBPE_MetadataCollection_Color();
+
+	// Whether to hide the alpha channel from the color picker.
+	UPROPERTY(EditAnywhere)
+	bool HideAlphaChannel;
+};
+
+
+
+/** Controls the format of the header row on array elements. */
+UCLASS(meta=(DisplayName = "Title Property", Group = "Array"))
+class UBPE_MetadataCollection_TitleProperty : public UBPE_MetadataCollection
+{
+	GENERATED_BODY()
+
+public:
+	// Determines the format of the header on each array element.
+	// You may specify a single property like this: "SomePropertyInStruct".
+	// You may also specify a Text-like formatting: "{SomePropertyInStruct} - {SomeOtherPropertyInStruct}".
+	UPROPERTY(EditAnywhere)
+	FString TitleProperty;
+
+protected:
+	virtual bool IsRelevantForProperty(const FProperty& InProperty) const override;
+	virtual bool IsRelevantForContainedProperty(const FProperty& InProperty) const override;
+};
+
+
+
+/** Exposes the possibility to specify a list of strings as an option to String or Name variables. */
+UCLASS(meta=(DisplayName = "Get Options", Group = "General"))
+class UBPE_MetadataCollection_GetOptions : public UBPE_MetadataCollectionStruct
+{
+	GENERATED_BODY()
+
+public:
+	// The name of a function that produces the array of Strings/Names to be used as options.
+	//
+	// There are a few caveats:
+	// * The function can be either a function inside the Blueprint, or a static C++ function.
+	// * The function CANNOT be defined in a BlueprintFunctionLibrary asset. C++ BlueprintFunctionLibraries are still okay.
+	// * The function needs to return a single array of Strings or Names.
+	// * The name of the output should be called "ReturnValue".
+	// * The function may not take any input parameters.
+	UPROPERTY(EditAnywhere)
+	FString GetOptions;
+
+protected:
+	TOptional<FString> ValidateOptionsFunction(const FString& FunctionName) const;
+	virtual TOptional<FString> GetValueForProperty(FProperty& Property) const override;;
+	virtual bool IsRelevantForContainedProperty(const FProperty& InProperty) const override;
 };

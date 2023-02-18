@@ -7,6 +7,8 @@
 
 #define LOCTEXT_NAMESPACE "FBlueprintPropertyExtensionsModule"
 
+DEFINE_LOG_CATEGORY(LogBlueprintPropertyExtensions);
+
 void FBPE_Module::StartupModule()
 {
 	FBlueprintEditorModule& BlueprintEditorModule = FModuleManager::GetModuleChecked<FBlueprintEditorModule>("Kismet");
