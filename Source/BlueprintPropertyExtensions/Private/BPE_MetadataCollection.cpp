@@ -14,25 +14,22 @@ bool UBPE_MetadataCollection::IsRelevantForContainedProperty(const FProperty& In
 void UBPE_MetadataCollection::InitializeFromMetadata(const FBPE_MetadataWrapper& MetadataWrapper)
 {
 	CurrentWrapper = MetadataWrapper;
-	
-	for (const auto* Property : TFieldRange<FProperty>(GetClass()))
-	{
-		if (Property->HasAnyPropertyFlags(CPF_DisableEditOnInstance))
-			continue;
 
-		if (MetadataWrapper.HasMetadata(Property->GetFName()))
+	ForEachVisibleProperty([this](const FProperty& Property)
+	{
+		if (CurrentWrapper.HasMetadata(Property.GetFName()))
 		{
-			const FString Value = MetadataWrapper.GetMetadata(Property->GetFName());
-			ImportValueForProperty(*Property, Value);
+			const FString Value = CurrentWrapper.GetMetadata(Property.GetFName());
+			ImportValueForProperty(Property, Value);
 		}
 		else
 		{
-			InitializeValueForProperty(*Property);
+			InitializeValueForProperty(Property);
 		}
-	}
+	});
 }
 
-void UBPE_MetadataCollection::ForEachVisibleProperty(TFunctionRef<FForEachVisiblePropertySignature> Functor)
+void UBPE_MetadataCollection::ForEachVisibleProperty(TFunctionRef<FForEachVisiblePropertySignature> Functor) const
 {
 	for (const FProperty* Prop : TFieldRange<FProperty>(GetClass()))
 	{
@@ -104,7 +101,7 @@ TOptional<FString> UBPE_MetadataCollection::ExportValueForProperty(FProperty& Pr
 		}
 		return {};
 	}
-
+	
 	if (IsEmptyContainer(Property, this))
 	{
 		return {};
@@ -112,6 +109,11 @@ TOptional<FString> UBPE_MetadataCollection::ExportValueForProperty(FProperty& Pr
 	
 	FString Value;
 	Property.ExportText_InContainer(0, Value, this, this, nullptr, 0);
+
+	if (Property.IsA<FStrProperty>() && Value.IsEmpty())
+	{
+		return {};
+	}
 	
 	return Value;
 }

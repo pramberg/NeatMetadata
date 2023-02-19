@@ -32,7 +32,7 @@ public:
 	 * @brief Loops through all visible properties on this object.
 	 * @param Functor Functor that executes for each property.
 	 */
-	void ForEachVisibleProperty(TFunctionRef<FForEachVisiblePropertySignature> Functor);
+	void ForEachVisibleProperty(TFunctionRef<FForEachVisiblePropertySignature> Functor) const;
 	
 	/**
 	 * @brief Is this collection relevant for the input property.
