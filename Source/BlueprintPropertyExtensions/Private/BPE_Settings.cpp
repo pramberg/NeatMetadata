@@ -6,16 +6,6 @@
 
 UBPE_Settings::UBPE_Settings()
 {
-	MetadataCollections = {
-		UBPE_MetadataCollection_TitleProperty::StaticClass(),
-		UBPE_MetadataCollection_EditCondition::StaticClass(),
-		UBPE_MetadataCollection_Units::StaticClass(),
-		UBPE_MetadataCollection_GameplayTagCategories::StaticClass(),
-		UBPE_MetadataCollection_Curves::StaticClass(),
-		UBPE_MetadataCollection_AssetBundles::StaticClass(),
-		UBPE_MetadataCollection_Color::StaticClass(),
-		UBPE_MetadataCollection_GetOptions::StaticClass(),
-	};
 }
 
 void UBPE_Settings::ForEachCollection(TFunctionRef<FForEachCollectionSignature> Functor) const
@@ -29,19 +19,42 @@ void UBPE_Settings::ForEachCollection(TFunctionRef<FForEachCollectionSignature> 
 
 void UBPE_Settings::RebuildMetadataCollections()
 {
-	MetadataCollectionInstances.Empty(MetadataCollections.Num());
-
-	for (TSoftClassPtr<UBPE_MetadataCollection> SoftClass : MetadataCollections)
+	MetadataCollectionInstances.Empty();
+	
+	if (AllowedCollections.IsEmpty())
 	{
-		if (SoftClass.IsNull())
+		// TODO: Support blueprint classes too? Right now they are not guaranteed to be loaded, so we have to load them through the asset registry.
+		for (UClass* Class : TObjectRange<UClass>())
 		{
-			continue;
-		}
+			if (!Class->IsChildOf(UBPE_MetadataCollection::StaticClass()) || Class->HasAnyClassFlags(CLASS_Abstract | CLASS_Deprecated))
+			{
+				continue;
+			}
 
-		const UClass* LoadedClass = SoftClass.LoadSynchronous();
-		if (ensure(LoadedClass))
+			if (DisallowedCollections.Contains(Class))
+			{
+				continue;
+			}
+
+			MetadataCollectionInstances.Add(NewObject<UBPE_MetadataCollection>(this, Class));
+		}
+	}
+	else
+	{
+		MetadataCollectionInstances.Reserve(AllowedCollections.Num());
+
+		for (TSoftClassPtr<UBPE_MetadataCollection> SoftClass : AllowedCollections)
 		{
-			MetadataCollectionInstances.Add(NewObject<UBPE_MetadataCollection>(this, LoadedClass));
+			if (SoftClass.IsNull())
+			{
+				continue;
+			}
+
+			const UClass* LoadedClass = SoftClass.LoadSynchronous();
+			if (ensure(LoadedClass))
+			{
+				MetadataCollectionInstances.Add(NewObject<UBPE_MetadataCollection>(this, LoadedClass));
+			}
 		}
 	}
 }
@@ -50,7 +63,8 @@ void UBPE_Settings::PostEditChangeProperty(FPropertyChangedEvent& PropertyChange
 {
 	Super::PostEditChangeProperty(PropertyChangedEvent);
 	
-	if (PropertyChangedEvent.GetMemberPropertyName() == GET_MEMBER_NAME_CHECKED(ThisClass, MetadataCollections))
+	if (PropertyChangedEvent.GetMemberPropertyName() == GET_MEMBER_NAME_CHECKED(ThisClass, AllowedCollections)
+		|| PropertyChangedEvent.GetMemberPropertyName() == GET_MEMBER_NAME_CHECKED(ThisClass, DisallowedCollections))
 	{
 		RebuildMetadataCollections();
 	}
