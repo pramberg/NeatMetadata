@@ -8,8 +8,6 @@
 #include "Math/UnitConversion.h"
 #include "BPE_CollectionTypes.generated.h"
 
-
-
 /**
  * Controls what "Categories", or root gameplay tags can be selected on a GameplayTag
  * or GameplayTagContainer property. Use this if you only want specific tags to be selectable.
@@ -27,10 +25,10 @@ public:
 	// One or more root tags that are selectable in the GameplayTag widget.
 	UPROPERTY(EditAnywhere)
 	FGameplayTagContainer Categories;
-	
+
 protected:
-	virtual TOptional<FString> GetValueForProperty(FProperty& Property) const override;
-	virtual void SetValueForProperty(const FProperty& Property, const FString& Value) override;
+	virtual TOptional<FString> ExportValueForProperty(FProperty& Property) const override;
+	virtual void ImportValueForProperty(const FProperty& Property, const FString& Value) override;
 };
 
 
@@ -97,8 +95,8 @@ public:
 
 protected:
 	virtual bool IsRelevantForContainedProperty(const FProperty& InProperty) const override;
-	virtual TOptional<FString> GetValueForProperty(FProperty& Property) const override;
-	virtual void SetValueForProperty(const FProperty& Property, const FString& Value) override;
+	virtual TOptional<FString> ExportValueForProperty(FProperty& Property) const override;
+	virtual void ImportValueForProperty(const FProperty& Property, const FString& Value) override;
 };
 
 
@@ -142,8 +140,8 @@ public:
 
 protected:
 	virtual bool IsRelevantForContainedProperty(const FProperty& InProperty) const override;
-	virtual TOptional<FString> GetValueForProperty(FProperty& Property) const override;
-	virtual void SetValueForProperty(const FProperty& Property, const FString& Value) override;
+	virtual TOptional<FString> ExportValueForProperty(FProperty& Property) const override;
+	virtual void ImportValueForProperty(const FProperty& Property, const FString& Value) override;
 };
 
 
@@ -204,6 +202,86 @@ public:
 
 protected:
 	TOptional<FString> ValidateOptionsFunction(const FString& FunctionName) const;
-	virtual TOptional<FString> GetValueForProperty(FProperty& Property) const override;;
+	virtual TOptional<FString> ExportValueForProperty(FProperty& Property) const override;;
 	virtual bool IsRelevantForContainedProperty(const FProperty& InProperty) const override;
+};
+
+
+
+/** Exposes the possibility to specify a list of strings as an option to String or Name variables. */
+UCLASS(meta=(DisplayName = "Directory Path", Group = "Paths"))
+class UBPE_MetadataCollection_DirectoryPath : public UBPE_MetadataCollectionStruct
+{
+	GENERATED_BODY()
+
+public:
+	UBPE_MetadataCollection_DirectoryPath();
+
+	UPROPERTY(EditAnywhere)
+	bool RelativePath;
+
+	UPROPERTY(EditAnywhere)
+	bool ContentDir;
+
+	UPROPERTY(EditAnywhere)
+	bool RelativeToGameContentDir;
+
+	UPROPERTY(EditAnywhere)
+	bool LongPackageName;
+};
+
+
+
+USTRUCT()
+struct FBPE_FilePathFilter
+{
+	GENERATED_BODY()
+
+	// The file extension to filter for. Does not need "*.".
+	UPROPERTY(EditAnywhere)
+	FString Extension;
+
+	// Optional description of this filter. If empty this will be generated from the extension.
+	UPROPERTY(EditAnywhere)
+	FString Description;
+};
+
+/** Exposes the possibility to specify a list of strings as an option to String or Name variables. */
+UCLASS(meta=(DisplayName = "File Path", Group = "Paths"))
+class UBPE_MetadataCollection_FilePath : public UBPE_MetadataCollectionStruct
+{
+	GENERATED_BODY()
+
+public:
+	UBPE_MetadataCollection_FilePath();
+
+	UPROPERTY(EditAnywhere)
+	bool RelativeToGameDir;
+
+	// The File Path Filter describes what file types should show up in the file picker.
+	UPROPERTY(EditAnywhere, DisplayName = "File Path Filter", meta = (TitleProperty = "{Description} (*.{Extension})"))
+	TArray<FBPE_FilePathFilter> FilePathFilter_Internal;
+
+protected:
+	virtual TOptional<FString> ExportValueForProperty(FProperty& Property) const override;
+	void SetFilePathFilterMetadata() const;
+};
+
+
+
+/** Exposes the possibility to specify a list of strings as an option to String or Name variables. */
+UCLASS(meta=(DisplayName = "Primary Asset Id", Group = "General"))
+class UBPE_MetadataCollection_PrimaryAssetId : public UBPE_MetadataCollectionStruct
+{
+	GENERATED_BODY()
+
+public:
+	UBPE_MetadataCollection_PrimaryAssetId();
+
+	UPROPERTY(EditAnywhere, meta = (NoElementDuplicate))
+	TArray<FPrimaryAssetType> AllowedTypes;
+
+protected:
+	virtual TOptional<FString> ExportValueForProperty(FProperty& Property) const override;
+	virtual void ImportValueForProperty(const FProperty& Property, const FString& Value) override;
 };

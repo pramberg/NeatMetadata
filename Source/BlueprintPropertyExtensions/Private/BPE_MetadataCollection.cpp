@@ -23,7 +23,7 @@ void UBPE_MetadataCollection::InitializeFromMetadata(const FBPE_MetadataWrapper&
 		if (MetadataWrapper.HasMetadata(Property->GetFName()))
 		{
 			const FString Value = MetadataWrapper.GetMetadata(Property->GetFName());
-			SetValueForProperty(*Property, Value);
+			ImportValueForProperty(*Property, Value);
 		}
 		else
 		{
@@ -67,7 +67,34 @@ bool UBPE_MetadataCollection::IsRelevantForProperty(const FProperty& InProperty)
 	return IsRelevantForContainedProperty(InProperty);
 }
 
-TOptional<FString> UBPE_MetadataCollection::GetValueForProperty(FProperty& Property) const
+namespace
+{
+	template<typename T> struct TPropertyToHelper { using Type = void; };
+	template<> struct TPropertyToHelper<FArrayProperty> { using Type = FScriptArrayHelper_InContainer; };
+	template<> struct TPropertyToHelper<FMapProperty> { using Type = FScriptMapHelper_InContainer; };
+	template<> struct TPropertyToHelper<FSetProperty> { using Type = FScriptSetHelper_InContainer; };
+	
+	template<typename T>
+	bool IsEmptyContainerOfType(const FProperty& Property, const UObject* Container)
+	{
+		if (const T* AsContainer = CastField<T>(&Property))
+		{
+			const typename TPropertyToHelper<T>::Type Helper(AsContainer, Container);
+			return Helper.Num() == 0;
+		}
+		
+		return false;
+	}
+
+	bool IsEmptyContainer(const FProperty& Property, const UObject* Container)
+	{
+		return IsEmptyContainerOfType<FArrayProperty>(Property, Container)
+			|| IsEmptyContainerOfType<FMapProperty>(Property, Container)
+			|| IsEmptyContainerOfType<FSetProperty>(Property, Container);
+	}
+}
+
+TOptional<FString> UBPE_MetadataCollection::ExportValueForProperty(FProperty& Property) const
 {
 	if (const FBoolProperty* AsBool = CastField<FBoolProperty>(&Property))
 	{
@@ -77,13 +104,19 @@ TOptional<FString> UBPE_MetadataCollection::GetValueForProperty(FProperty& Prope
 		}
 		return {};
 	}
+
+	if (IsEmptyContainer(Property, this))
+	{
+		return {};
+	}
 	
 	FString Value;
 	Property.ExportText_InContainer(0, Value, this, this, nullptr, 0);
+	
 	return Value;
 }
 
-void UBPE_MetadataCollection::SetValueForProperty(const FProperty& Property, const FString& Value)
+void UBPE_MetadataCollection::ImportValueForProperty(const FProperty& Property, const FString& Value)
 {
 	if (const FBoolProperty* BoolProp = CastField<FBoolProperty>(&Property))
 	{
@@ -109,13 +142,13 @@ void UBPE_MetadataCollection::PostEditChangeProperty(FPropertyChangedEvent& Prop
 {
 	UObject::PostEditChangeProperty(PropertyChangedEvent);
 
-	if (!PropertyChangedEvent.Property)
+	if (!PropertyChangedEvent.MemberProperty)
 	{
 		return;
 	}
 	
-	const FName PropertyName = PropertyChangedEvent.GetPropertyName();
-	if (const auto OptionalValue = GetValueForProperty(*PropertyChangedEvent.Property))
+	const FName PropertyName = PropertyChangedEvent.GetMemberPropertyName();
+	if (const auto OptionalValue = ExportValueForProperty(*PropertyChangedEvent.MemberProperty))
 	{
 		CurrentWrapper.SetMetadata(PropertyName, *OptionalValue);
 	}

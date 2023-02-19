@@ -14,7 +14,7 @@ UBPE_MetadataCollection_GameplayTagCategories::UBPE_MetadataCollection_GameplayT
 	};
 }
 
-TOptional<FString> UBPE_MetadataCollection_GameplayTagCategories::GetValueForProperty(FProperty& Property) const
+TOptional<FString> UBPE_MetadataCollection_GameplayTagCategories::ExportValueForProperty(FProperty& Property) const
 {
 	if (Property.GetFName() == GET_MEMBER_NAME_CHECKED(ThisClass, Categories))
 	{
@@ -23,10 +23,10 @@ TOptional<FString> UBPE_MetadataCollection_GameplayTagCategories::GetValueForPro
 		return Result.IsEmpty() ? NoPropertyValue : Result;
 	}
 	
-	return Super::GetValueForProperty(Property);
+	return Super::ExportValueForProperty(Property);
 }
 
-void UBPE_MetadataCollection_GameplayTagCategories::SetValueForProperty(const FProperty& Property, const FString& Value)
+void UBPE_MetadataCollection_GameplayTagCategories::ImportValueForProperty(const FProperty& Property, const FString& Value)
 {
 	if (Property.GetFName() == GET_MEMBER_NAME_CHECKED(ThisClass, Categories))
 	{
@@ -40,7 +40,7 @@ void UBPE_MetadataCollection_GameplayTagCategories::SetValueForProperty(const FP
 	}
 	else
 	{
-		Super::SetValueForProperty(Property, Value);
+		Super::ImportValueForProperty(Property, Value);
 	}
 }
 #pragma endregion 
@@ -57,7 +57,7 @@ bool UBPE_MetadataCollection_Units::IsRelevantForContainedProperty(const FProper
 	return InProperty.IsA<FNumericProperty>() && !InProperty.IsA<FEnumProperty>();
 }
 
-TOptional<FString> UBPE_MetadataCollection_Units::GetValueForProperty(FProperty& Property) const
+TOptional<FString> UBPE_MetadataCollection_Units::ExportValueForProperty(FProperty& Property) const
 {
 	if (Property.GetFName() == GET_MEMBER_NAME_CHECKED(ThisClass, Units) && Units == EUnit::Unspecified)
 	{
@@ -69,10 +69,10 @@ TOptional<FString> UBPE_MetadataCollection_Units::GetValueForProperty(FProperty&
 		return NoPropertyValue;
 	}
 	
-	return Super::GetValueForProperty(Property);
+	return Super::ExportValueForProperty(Property);
 }
 
-void UBPE_MetadataCollection_Units::SetValueForProperty(const FProperty& Property, const FString& Value)
+void UBPE_MetadataCollection_Units::ImportValueForProperty(const FProperty& Property, const FString& Value)
 {
 	if (Property.GetFName() == GET_MEMBER_NAME_CHECKED(ThisClass, Units) && Value.IsEmpty())
 	{
@@ -86,7 +86,7 @@ void UBPE_MetadataCollection_Units::SetValueForProperty(const FProperty& Propert
 		return;
 	}
 	
-	Super::SetValueForProperty(Property, Value);
+	Super::ImportValueForProperty(Property, Value);
 }
 #pragma endregion 
 
@@ -108,26 +108,29 @@ bool UBPE_MetadataCollection_AssetBundles::IsRelevantForContainedProperty(const 
 	return bIsApplicableProperty && InProperty.GetOwnerClass()->IsChildOf<UPrimaryDataAsset>();
 }
 
-TOptional<FString> UBPE_MetadataCollection_AssetBundles::GetValueForProperty(FProperty& Property) const
+TOptional<FString> UBPE_MetadataCollection_AssetBundles::ExportValueForProperty(FProperty& Property) const
 {
 	if (Property.GetFName() == GET_MEMBER_NAME_CHECKED(ThisClass, AssetBundles))
 	{
-		return FString::Join(AssetBundles, TEXT(","));
+		return AssetBundles.IsEmpty() ? NoPropertyValue : FString::Join(AssetBundles, TEXT(","));
 	}
 	
-	return Super::GetValueForProperty(Property);
+	return Super::ExportValueForProperty(Property);
 }
 
-void UBPE_MetadataCollection_AssetBundles::SetValueForProperty(const FProperty& Property, const FString& Value)
+void UBPE_MetadataCollection_AssetBundles::ImportValueForProperty(const FProperty& Property, const FString& Value)
 {
 	if (Property.GetFName() == GET_MEMBER_NAME_CHECKED(ThisClass, AssetBundles))
 	{
-		AssetBundles.Empty();
-		Value.ParseIntoArray(AssetBundles, TEXT(","));
+		if (!Value.IsEmpty())
+		{
+			AssetBundles.Empty();
+			Value.ParseIntoArray(AssetBundles, TEXT(","), false);
+		}
 	}
 	else
 	{
-		Super::SetValueForProperty(Property, Value);
+		Super::ImportValueForProperty(Property, Value);
 	}
 }
 #pragma endregion
@@ -152,7 +155,6 @@ bool UBPE_MetadataCollection_TitleProperty::IsRelevantForContainedProperty(const
 {
 	return InProperty.IsA<FStructProperty>();
 }
-
 #pragma endregion
 
 #pragma region Get Options
@@ -218,7 +220,7 @@ TOptional<FString> UBPE_MetadataCollection_GetOptions::ValidateOptionsFunction(c
 	return {};
 }
 
-TOptional<FString> UBPE_MetadataCollection_GetOptions::GetValueForProperty(FProperty& Property) const
+TOptional<FString> UBPE_MetadataCollection_GetOptions::ExportValueForProperty(FProperty& Property) const
 {
 	if (Property.GetFName() == GET_MEMBER_NAME_CHECKED(ThisClass, GetOptions))
 	{
@@ -230,7 +232,7 @@ TOptional<FString> UBPE_MetadataCollection_GetOptions::GetValueForProperty(FProp
 		}
 	}
 	
-	return Super::GetValueForProperty(Property);
+	return Super::ExportValueForProperty(Property);
 }
 
 bool UBPE_MetadataCollection_GetOptions::IsRelevantForContainedProperty(const FProperty& InProperty) const
@@ -238,3 +240,111 @@ bool UBPE_MetadataCollection_GetOptions::IsRelevantForContainedProperty(const FP
 	return InProperty.IsA<FStrProperty>() || InProperty.IsA<FNameProperty>();
 }
 #pragma endregion
+
+#pragma region Directory Path
+UBPE_MetadataCollection_DirectoryPath::UBPE_MetadataCollection_DirectoryPath()
+{
+	// FDirectoryPath doesn't have a StaticStruct() member nor a TBaseStructure<FDirectoryPath>::Get() implementation.
+	// Therefore have to find it manually.
+	static UScriptStruct* DirectoryPathStruct = FindObjectChecked<UScriptStruct>(UObject::StaticClass()->GetPackage(), TEXT("DirectoryPath"));
+	Structs = {
+		DirectoryPathStruct
+	};
+}
+#pragma endregion 
+
+#pragma region File Path
+UBPE_MetadataCollection_FilePath::UBPE_MetadataCollection_FilePath()
+{
+	// FFilePath doesn't have a StaticStruct() member nor a TBaseStructure<FFilePath>::Get() implementation.
+	// Therefore have to find it manually.
+	static UScriptStruct* FilePathStruct = FindObjectChecked<UScriptStruct>(UObject::StaticClass()->GetPackage(), TEXT("FilePath"));
+	Structs = {
+		FilePathStruct
+	};
+}
+
+TOptional<FString> UBPE_MetadataCollection_FilePath::ExportValueForProperty(FProperty& Property) const
+{
+	if (Property.GetFName() == GET_MEMBER_NAME_CHECKED(ThisClass, FilePathFilter_Internal))
+	{
+		SetFilePathFilterMetadata();
+	}
+	
+	return Super::ExportValueForProperty(Property);
+}
+
+void UBPE_MetadataCollection_FilePath::SetFilePathFilterMetadata() const
+{
+	// The setup for FilePathFilter is a bit more complicated than typical.
+	// We could either parse the metadata string like what happens in trivial cases where we just need a slightly different
+	// format on the string. But due to the potentially complex format of the filter string, I prefer to store the raw
+	// filter "description" in a separate field, and generate the real filter based on that description. This solution vastly
+	// reduces the complexity, but of course introduces a new metadata field. I think that's a fair compromise, since
+	// property metadata is just an editor feature anyways.
+	static const FName FilePathFilter("FilePathFilter");
+	
+	TArray<FBPE_FilePathFilter> FilePathDescCopy = FilePathFilter_Internal;
+	FilePathDescCopy.RemoveAll([](const FBPE_FilePathFilter& Filter) { return Filter.Extension.IsEmpty(); });
+	
+	if (FilePathDescCopy.IsEmpty())
+	{
+		CurrentWrapper.RemoveMetadata(FilePathFilter);
+		return;
+	}
+		
+	const FString IndividualFiles = FString::JoinBy(FilePathDescCopy, TEXT("|"), [](const FBPE_FilePathFilter& Filter)
+	{
+		const FString Description = Filter.Description.IsEmpty() ? FString::Printf(TEXT("%s Files"), *Filter.Extension.ToUpper()) : Filter.Description;
+		return FString::Printf(TEXT("%s (*.%s)|*.%s"), *Description, *Filter.Extension, *Filter.Extension);
+	});
+
+	if (FilePathDescCopy.Num() == 1)
+	{
+		CurrentWrapper.SetMetadata(FilePathFilter, IndividualFiles);
+		return;
+	}
+		
+	const FString CombinedFiles = FString::JoinBy(FilePathDescCopy, TEXT(";"), [](const FBPE_FilePathFilter& Filter)
+	{
+		return FString::Printf(TEXT("*.%s"), *Filter.Extension);
+	});
+
+	CurrentWrapper.SetMetadata(FilePathFilter, FString::Printf(TEXT("All Files (%s)|%s|%s"), *CombinedFiles, *CombinedFiles, *IndividualFiles));
+}
+#pragma endregion
+
+#pragma region Primary Asset Id
+UBPE_MetadataCollection_PrimaryAssetId::UBPE_MetadataCollection_PrimaryAssetId()
+{
+	Structs = {
+		TBaseStructure<FPrimaryAssetId>::Get(),
+	};
+}
+
+TOptional<FString> UBPE_MetadataCollection_PrimaryAssetId::ExportValueForProperty(FProperty& Property) const
+{
+	if (Property.GetFName() == GET_MEMBER_NAME_CHECKED(ThisClass, AllowedTypes))
+	{
+		return AllowedTypes.IsEmpty() ? NoPropertyValue : FString::JoinBy(AllowedTypes, TEXT(","), [](const FPrimaryAssetType& Type) { return Type.ToString(); });
+	}
+	
+	return Super::ExportValueForProperty(Property);
+}
+
+void UBPE_MetadataCollection_PrimaryAssetId::ImportValueForProperty(const FProperty& Property, const FString& Value)
+{
+	if (Property.GetFName() == GET_MEMBER_NAME_CHECKED(ThisClass, AllowedTypes) && !Value.IsEmpty())
+	{
+		TArray<FString> TypesAsString;
+		Value.ParseIntoArray(TypesAsString, TEXT(","));
+
+		AllowedTypes.Empty(TypesAsString.Num());
+		Algo::Transform(TypesAsString, AllowedTypes, [](const FString& TypeAsString){ return FPrimaryAssetType(*TypeAsString); });
+	}
+	else
+	{
+		Super::ImportValueForProperty(Property, Value);
+	}
+}
+#pragma endregion 

@@ -64,14 +64,14 @@ protected:
 	 * @param Property The property on this object to retrieve the value from.
 	 * @return The value if you want to set it, or NoPropertyValue if you want to remove the metadata.
 	 */
-	virtual TOptional<FString> GetValueForProperty(FProperty& Property) const;
+	virtual TOptional<FString> ExportValueForProperty(FProperty& Property) const;
 	
 	/**
-	 * @brief Sets the value of the property on this object from a string.
+	 * @brief Imports the value of a property to this object from a string.
 	 * @param Property The property on this object to set the value on.
 	 * @param Value The value to set the property to, that has been retrieved from metadata.
 	 */
-	virtual void SetValueForProperty(const FProperty& Property, const FString& Value);
+	virtual void ImportValueForProperty(const FProperty& Property, const FString& Value);
 	
 	/**
 	 * @brief Initializes the value for a property to its defaults, from the CDO.
