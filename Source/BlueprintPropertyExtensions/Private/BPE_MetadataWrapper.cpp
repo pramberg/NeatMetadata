@@ -1,66 +1,46 @@
 ﻿// Copyright Viktor Pramberg. All Rights Reserved.
-
-
 #include "BPE_MetadataWrapper.h"
-
 #include "Kismet2/BlueprintEditorUtils.h"
 
-FBPE_MetadataWrapper::FBPE_MetadataWrapper(TWeakFieldPtr<FProperty> InProperty, TWeakObjectPtr<UBlueprint> InBlueprint): Property(InProperty), Blueprint(InBlueprint)
+FBPE_MetadataWrapper::FBPE_MetadataWrapper(TWeakFieldPtr<FProperty> InProperty, TWeakObjectPtr<UBlueprint> InBlueprint) :
+	Property(InProperty),
+	Blueprint(InBlueprint),
+	VariableDesc(Blueprint->NewVariables.FindByPredicate([this](const FBPVariableDescription& InDesc) { return InDesc.VarName == Property->GetFName(); }))
 {
+	check(IsValid());
 }
 
 void FBPE_MetadataWrapper::SetMetadata(FName Key, const FString& Value) const
 {
-	FProperty* Prop;
-	FBPVariableDescription* Desc;
-	if (GetMetadataContainers(Prop, Desc))
+	if (IsValid())
 	{
-		FBlueprintEditorUtils::SetBlueprintVariableMetaData(Blueprint.Get(), Prop->GetFName(), nullptr, Key, Value);
-	}
-}
-
-void FBPE_MetadataWrapper::SetOrRemoveMetadata(FName Key, const FString& Value) const
-{
-	if (Value.IsEmpty())
-	{
-		RemoveMetadata(Key);
-	}
-	else
-	{
-		SetMetadata(Key, Value);
+		Blueprint->Modify();
+		FBlueprintEditorUtils::SetBlueprintVariableMetaData(Blueprint.Get(), Property->GetFName(), nullptr, Key, Value);
 	}
 }
 
 void FBPE_MetadataWrapper::RemoveMetadata(FName Key) const
 {
-	FProperty* Prop;
-	FBPVariableDescription* Desc;
-	if (GetMetadataContainers(Prop, Desc))
+	if (IsValid())
 	{
-		FBlueprintEditorUtils::RemoveBlueprintVariableMetaData(Blueprint.Get(), Prop->GetFName(), nullptr, Key);
+		Blueprint->Modify();
+		FBlueprintEditorUtils::RemoveBlueprintVariableMetaData(Blueprint.Get(), Property->GetFName(), nullptr, Key);
 	}
 }
 
 FString FBPE_MetadataWrapper::GetMetadata(FName Key) const
 {
-	FProperty* Prop;
-	FBPVariableDescription* Desc;
-	if (GetMetadataContainers(Prop, Desc))
-	{
-		return Desc->HasMetaData(Key) ? Desc->GetMetaData(Key) : FString();
-	}
-	return FString();
+	return IsValid() && VariableDesc->HasMetaData(Key) ? VariableDesc->GetMetaData(Key) : FString();
 }
 
 bool FBPE_MetadataWrapper::HasMetadata(FName Key) const
 {
-	FProperty* Prop;
-	FBPVariableDescription* Desc;
-	if (GetMetadataContainers(Prop, Desc))
-	{
-		return Desc->HasMetaData(Key);
-	}
-	return false;
+	return IsValid() ? VariableDesc->HasMetaData(Key) : false;
+}
+
+bool FBPE_MetadataWrapper::IsValid() const
+{
+	return Blueprint.IsValid() && Property.IsValid() && VariableDesc;
 }
 
 const FProperty* FBPE_MetadataWrapper::GetProperty() const
@@ -71,28 +51,4 @@ const FProperty* FBPE_MetadataWrapper::GetProperty() const
 UBlueprint* FBPE_MetadataWrapper::GetBlueprint() const
 {
 	return Blueprint.Get();
-}
-
-bool FBPE_MetadataWrapper::GetMetadataContainers(FProperty*& OutProp, FBPVariableDescription*& OutDesc) const
-{
-	if (!Blueprint.IsValid() || !Property.IsValid())
-	{
-		return false;
-	}
-			
-	UBlueprint* BP = Blueprint.Get();
-	FProperty* Prop = Property.Get();
-
-	FBPVariableDescription* Desc = BP->NewVariables
-		.FindByPredicate([Prop](const FBPVariableDescription& InDesc) { return InDesc.VarName == Prop->GetFName(); });
-			
-	if (!Desc)
-	{
-		return false;
-	}
-
-	OutProp = Property.Get();
-	OutDesc = Desc;
-
-	return true;
 }
