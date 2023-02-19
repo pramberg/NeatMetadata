@@ -1,4 +1,4 @@
-// Copyright Epic Games, Inc. All Rights Reserved.
+// Copyright Viktor Pramberg. All Rights Reserved.
 
 using UnrealBuildTool;
 
@@ -8,14 +8,17 @@ public class BlueprintPropertyExtensions : ModuleRules
 	{
 		PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
 		
-		PublicDependencyModuleNames.AddRange(new string[]
+		PublicDependencyModuleNames.AddRange
+		(
+			new string[]
 			{
 				"Core",
 			}
 		);
-			
 		
-		PrivateDependencyModuleNames.AddRange(new string[]
+		PrivateDependencyModuleNames.AddRange
+		(
+			new string[]
 			{
 				"CoreUObject",
 				"Engine",
@@ -23,6 +26,8 @@ public class BlueprintPropertyExtensions : ModuleRules
 				"SlateCore",
 				"GameplayTags",
 				"GameplayTagsEditor",
+				"DeveloperSettings",
+				"UnrealEd",
 			}
 		);
 	}

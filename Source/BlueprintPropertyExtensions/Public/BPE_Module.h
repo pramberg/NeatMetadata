@@ -1,19 +1,5 @@
-// Copyright Epic Games, Inc. All Rights Reserved.
-
+// Copyright Viktor Pramberg. All Rights Reserved.
 #pragma once
+#include "Logging/LogMacros.h"
 
-#include "CoreMinimal.h"
-#include "BlueprintEditorModule.h"
-#include "Modules/ModuleManager.h"
-
-class FBPE_Module : public IModuleInterface
-{
-public:
-
-	/** IModuleInterface implementation */
-	virtual void StartupModule() override;
-	virtual void ShutdownModule() override;
-
-private:
-	FDelegateHandle BlueprintVariableCustomizationHandle;
-};
+DECLARE_LOG_CATEGORY_EXTERN(LogBlueprintPropertyExtensions, Log, All);
