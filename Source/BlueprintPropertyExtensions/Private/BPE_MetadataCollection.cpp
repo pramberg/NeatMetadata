@@ -101,14 +101,30 @@ TOptional<FString> UBPE_MetadataCollection::ExportValueForProperty(FProperty& Pr
 		}
 		return {};
 	}
+
+	if (const FObjectPropertyBase* AsObject = CastField<FObjectPropertyBase>(&Property))
+	{
+		if (!AsObject->GetObjectPropertyValue_InContainer(this))
+		{
+			return {};
+		}
+	}
 	
 	if (IsEmptyContainer(Property, this))
 	{
 		return {};
 	}
-	
+
 	FString Value;
-	Property.ExportText_InContainer(0, Value, this, this, nullptr, 0);
+	if (Property.ArrayDim == 1)
+	{
+		Property.ExportText_InContainer(0, Value, this, this, nullptr, 0);
+	}
+	else
+	{
+		const void* ValueAddr = Property.ContainerPtrToValuePtr<void>(this);
+		FArrayProperty::ExportTextInnerItem(Value, &Property, ValueAddr, Property.ArrayDim, ValueAddr, Property.ArrayDim);
+	}
 
 	if (Property.IsA<FStrProperty>() && Value.IsEmpty())
 	{
@@ -124,9 +140,14 @@ void UBPE_MetadataCollection::ImportValueForProperty(const FProperty& Property, 
 	{
 		BoolProp->SetPropertyValue_InContainer(this, true);
 	}
-	else
+	else if (Property.ArrayDim == 1)
 	{
 		Property.ImportText_InContainer(*Value, this, this, 0);
+	}
+	else
+	{
+		void* ValueAddr = Property.ContainerPtrToValuePtr<void>(this);
+		FArrayProperty::ImportTextInnerItem(*Value, &Property, ValueAddr, PPF_None, this);
 	}
 }
 
