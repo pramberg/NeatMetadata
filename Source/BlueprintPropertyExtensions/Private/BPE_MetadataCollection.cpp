@@ -64,6 +64,11 @@ bool UBPE_MetadataCollection::IsRelevantForProperty(const FProperty& InProperty)
 	return IsRelevantForContainedProperty(InProperty);
 }
 
+TSharedPtr<SWidget> UBPE_MetadataCollection::CreateValueWidgetForProperty(const TSharedRef<IPropertyHandle>& InHandle)
+{
+	return nullptr;
+}
+
 namespace
 {
 	template<typename T> struct TPropertyToHelper { using Type = void; };

@@ -40,6 +40,13 @@ public:
 	 * @return True if we should show this collection for this property.
 	 */
 	virtual bool IsRelevantForProperty(const FProperty& InProperty) const;
+	
+	/**
+	 * @brief May return a widget if the collection wants to provide a custom widget for a property.
+	 * @param InHandle A property handle that may want a custom display.
+	 * @return A widget or a nullptr if no custom display is desired.
+	 */
+	virtual TSharedPtr<SWidget> CreateValueWidgetForProperty(const TSharedRef<IPropertyHandle>& InHandle);
 
 protected:
 	/**

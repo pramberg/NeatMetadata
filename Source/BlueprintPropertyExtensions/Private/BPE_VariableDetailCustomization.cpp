@@ -104,7 +104,7 @@ void BPE_VariableDetailCustomization::CustomizeDetails(IDetailLayoutBuilder& Det
 				{
 					const FText GroupDisplayName = GroupPtr ? FText::FromString(*GroupPtr) : CollectionClass.GetDisplayNameText();
 					Group = &MetadataCategory.AddGroup(GroupName, GroupDisplayName);
-
+					
 				   // Customize the header to allow tooltips on the group itself.
 				   Group->HeaderRow()
 				   [
@@ -128,13 +128,42 @@ void BPE_VariableDetailCustomization::CustomizeDetails(IDetailLayoutBuilder& Det
 			{
 				if (const TSharedPtr<IPropertyHandle> Handle = DetailLayout.AddObjectPropertyData({ &Collection }, Property.GetFName()))
 				{
+					const TSharedPtr<SWidget> ValueWidget = Collection.CreateValueWidgetForProperty(Handle.ToSharedRef());
 					if (Group)
 					{
-						Group->AddPropertyRow(Handle.ToSharedRef());
+						if (ValueWidget)
+						{
+							Group->AddWidgetRow().NameContent()
+							[
+								Handle->CreatePropertyNameWidget()
+							]
+							.ValueContent()
+							[
+								ValueWidget.ToSharedRef()
+							];
+						}
+						else
+						{
+							Group->AddPropertyRow(Handle.ToSharedRef());
+						}
 					}
 					else
 					{
-						MetadataCategory.AddProperty(Handle);
+						if (ValueWidget)
+						{
+							MetadataCategory.AddCustomRow(Property.GetDisplayNameText()).NameContent()
+							[
+								Handle->CreatePropertyNameWidget()
+							]
+							.ValueContent()
+							[
+								ValueWidget.ToSharedRef()
+							];
+						}
+						else
+						{
+							MetadataCategory.AddProperty(Handle);
+						}
 					}
 				}
 			});
