@@ -28,6 +28,8 @@ public class BlueprintPropertyExtensions : ModuleRules
 				"GameplayTagsEditor",
 				"DeveloperSettings",
 				"UnrealEd",
+				"PropertyEditor",
+				"ClassViewer",
 			}
 		);
 	}

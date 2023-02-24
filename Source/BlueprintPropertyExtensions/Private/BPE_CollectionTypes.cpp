@@ -1,9 +1,14 @@
 ﻿// Copyright Viktor Pramberg. All Rights Reserved.
 #include "BPE_CollectionTypes.h"
 #include "BPE_Module.h"
+#include "ClassViewerFilter.h"
+#include "DetailLayoutBuilder.h"
+#include "PropertyCustomizationHelpers.h"
+#include "SComponentClassCombo.h"
 
 #include "Curves/CurveLinearColor.h"
 #include "Curves/CurveVector.h"
+#include "Kismet2/BlueprintEditorUtils.h"
 
 #pragma region Gameplay Tag Categories
 UBPE_MetadataCollection_GameplayTagCategories::UBPE_MetadataCollection_GameplayTagCategories()
@@ -347,4 +352,125 @@ void UBPE_MetadataCollection_PrimaryAssetId::ImportValueForProperty(const FPrope
 		Super::ImportValueForProperty(Property, Value);
 	}
 }
-#pragma endregion 
+#pragma endregion
+
+#pragma region Show Only Inner Properties
+bool UBPE_MetadataCollection_ShowOnlyInnerProperties::IsRelevantForContainedProperty(const FProperty& InProperty) const
+{
+	return InProperty.IsA<FStructProperty>();
+}
+#pragma endregion
+
+#pragma region Class Pickers
+bool UBPE_MetadataCollection_ClassPickers::IsRelevantForContainedProperty(const FProperty& InProperty) const
+{
+	return InProperty.IsA<FSoftClassProperty>() || InProperty.IsA<FClassProperty>();
+}
+
+namespace
+{
+	// Class filter that only shows interfaces.
+	class FBPE_InterfaceClassFilter : public IClassViewerFilter
+	{
+	public:
+		virtual bool IsClassAllowed(const FClassViewerInitializationOptions& InInitOptions, const UClass* InClass, TSharedRef<FClassViewerFilterFuncs> InFilterFuncs) override
+		{
+			return InClass->HasAnyClassFlags(EClassFlags::CLASS_Interface);
+		}
+
+		virtual bool IsUnloadedClassAllowed(const FClassViewerInitializationOptions& InInitOptions, const TSharedRef<const IUnloadedBlueprintData> InClass, TSharedRef<FClassViewerFilterFuncs> InFilterFuncs) override
+		{
+			return InClass->HasAnyClassFlags(EClassFlags::CLASS_Interface);
+		}
+	};
+
+	// I wasn't able to find a way to get default class pickers to show all interfaces. That's what this widget does.
+	class SBPE_InterfaceClassSelector : public SCompoundWidget
+	{
+		SLATE_BEGIN_ARGS(SBPE_InterfaceClassSelector) {}
+		SLATE_END_ARGS()
+		
+		void Construct(const FArguments&, TSharedRef<IPropertyHandle> InPropertyHandle)
+		{
+			PropertyHandle = InPropertyHandle;
+
+			ChildSlot
+			[
+				SNew(SComboButton)
+				.OnGetMenuContent(this, &SBPE_InterfaceClassSelector::GetMenuContent)
+				.ButtonContent()
+				[
+					SNew(STextBlock)
+					.Text(this, &SBPE_InterfaceClassSelector::GetButtonText)
+					.Font(IDetailLayoutBuilder::GetDetailFont())
+				]
+			];
+		}
+
+		UClass* GetClass() const
+		{
+			UObject* Obj;
+			PropertyHandle->GetValue(Obj);
+			return Cast<UClass>(Obj);
+		}
+
+		TSharedRef<SWidget> GetMenuContent()
+		{
+			FClassViewerModule& ClassViewerModule = FModuleManager::LoadModuleChecked<FClassViewerModule>("ClassViewer");
+			FClassViewerInitializationOptions Options;
+			Options.bShowUnloadedBlueprints = true;
+			Options.bShowNoneOption = true;
+			Options.bAllowViewOptions = false;
+			Options.NameTypeToDisplay = EClassViewerNameTypeToDisplay::DisplayName;
+			Options.InitiallySelectedClass = GetClass();
+			Options.ClassFilters.Add(MakeShared<FBPE_InterfaceClassFilter>());
+					
+			return SNew(SBox)
+				.WidthOverride(280)
+				[
+					SNew(SVerticalBox)
+					+SVerticalBox::Slot()
+					.AutoHeight()
+					.MaxHeight(500)
+					[
+						ClassViewerModule.CreateClassViewer(Options, FOnClassPicked::CreateSP(this, &SBPE_InterfaceClassSelector::OnClassPicked))
+					]
+				];
+		}
+
+		void OnClassPicked(UClass* InClass) const
+		{
+			if (GetClass() != InClass)
+			{
+				PropertyHandle->SetValue(InClass);
+			}
+		}
+
+		FText GetButtonText() const
+		{
+			return GetClass() ? GetClass()->GetDisplayNameText() : INVTEXT("None");
+		}
+
+	private:
+		TSharedPtr<IPropertyHandle> PropertyHandle;
+	};
+}
+
+TSharedPtr<SWidget> UBPE_MetadataCollection_ClassPickers::CreateValueWidgetForProperty(const TSharedRef<IPropertyHandle>& InHandle)
+{
+	if (InHandle->GetProperty()->GetFName() == GET_MEMBER_NAME_CHECKED(ThisClass, MustImplement))
+	{
+		return SNew(SBPE_InterfaceClassSelector, InHandle);
+	}
+	
+	return Super::CreateValueWidgetForProperty(InHandle);
+}
+#pragma endregion
+
+
+#pragma region Array
+bool UBPE_MetadataCollection_Array::IsRelevantForProperty(const FProperty& InProperty) const
+{
+	return InProperty.IsA<FArrayProperty>();
+}
+#pragma endregion

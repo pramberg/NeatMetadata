@@ -278,10 +278,86 @@ class UBPE_MetadataCollection_PrimaryAssetId : public UBPE_MetadataCollectionStr
 public:
 	UBPE_MetadataCollection_PrimaryAssetId();
 
-	UPROPERTY(EditAnywhere, meta = (NoElementDuplicate))
-	TArray<FPrimaryAssetType> AllowedTypes;
+	UPROPERTY(EditAnywhere)
+	TSet<FPrimaryAssetType> AllowedTypes;
 
 protected:
 	virtual TOptional<FString> ExportValueForProperty(FProperty& Property) const override;
 	virtual void ImportValueForProperty(const FProperty& Property, const FString& Value) override;
+};
+
+
+
+/** Whether to remove the parent scope around the struct property. */
+UCLASS(meta=(DisplayName = "Show Only Inner Properties", Group = "General"))
+class UBPE_MetadataCollection_ShowOnlyInnerProperties : public UBPE_MetadataCollection
+{
+	GENERATED_BODY()
+
+public:
+	// Removes the parent scope around this struct and displays all of this struct's properties inline.
+	UPROPERTY(EditAnywhere)
+	bool ShowOnlyInnerProperties = false;
+
+protected:
+	virtual bool IsRelevantForContainedProperty(const FProperty& InProperty) const override;
+};
+
+
+
+/** Options for class and soft class properties. Allows you to narrow down what classes are allowed to be selected. */
+UCLASS(meta=(DisplayName = "Class Pickers"))
+class UBPE_MetadataCollection_ClassPickers : public UBPE_MetadataCollection
+{
+	GENERATED_BODY()
+
+public:
+	// Whether to allow abstract classes to be selected.
+	UPROPERTY(EditAnywhere)
+	bool AllowAbstract = false;
+
+	// Whether to show the classes in a tree view or a list view.
+	UPROPERTY(EditAnywhere)
+	bool ShowTreeView = false;
+
+	// Whether to only allow classes created by blueprints, or allow native classes too.
+	UPROPERTY(EditAnywhere)
+	bool BlueprintBaseOnly = false;
+
+	// Whether to only allow actors to be selected, or any object.
+	UPROPERTY(EditAnywhere)
+	bool OnlyPlaceable = false;
+
+	// Whether to allow the "Create New" button that appears next to the property widget by default.
+	UPROPERTY(EditAnywhere)
+	bool DisallowCreateNew = false;
+
+	// Specifies an interface that classes must implement in order to be selectable.
+	UPROPERTY(EditAnywhere)
+	UClass* MustImplement = nullptr;
+
+protected:
+	virtual bool IsRelevantForContainedProperty(const FProperty& InProperty) const override;
+	virtual TSharedPtr<SWidget> CreateValueWidgetForProperty(const TSharedRef<IPropertyHandle>& InHandle) override;
+};
+
+
+
+/** Some arcane and obscure array-specific metadata. */
+UCLASS(meta=(DisplayName = "Array", Group = "Array"))
+class UBPE_MetadataCollection_Array : public UBPE_MetadataCollection
+{
+	GENERATED_BODY()
+
+public:
+	// Removes the possibility to use Duplicate on an element.
+	UPROPERTY(EditAnywhere)
+	bool NoElementDuplicate = false;
+
+	// Removes the possibility to reorder elements in the array.
+	UPROPERTY(EditAnywhere)
+	bool EditFixedOrder = false;
+
+protected:
+	virtual bool IsRelevantForProperty(const FProperty& InProperty) const override;
 };
