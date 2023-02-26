@@ -40,7 +40,7 @@ Extension to blueprint properties to allow various metadata to be used that is o
 * `HideViewOptions`
 * `MustImplement`
 
-## Array
+### Array
 * `NoElementDuplicate`
 * `EditFixedOrder`
 
