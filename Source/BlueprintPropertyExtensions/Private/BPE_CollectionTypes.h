@@ -306,8 +306,8 @@ protected:
 
 
 /** Options for class and soft class properties. Allows you to narrow down what classes are allowed to be selected. */
-UCLASS(meta=(DisplayName = "Class Pickers"))
-class UBPE_MetadataCollection_ClassPickers : public UBPE_MetadataCollection
+UCLASS(meta=(DisplayName = "Class Picker"))
+class UBPE_MetadataCollection_ClassPicker : public UBPE_MetadataCollection
 {
 	GENERATED_BODY()
 
@@ -331,6 +331,14 @@ public:
 	// Whether to allow the "Create New" button that appears next to the property widget by default.
 	UPROPERTY(EditAnywhere)
 	bool DisallowCreateNew = false;
+
+	// Whether to show the exact name of classes, or use their display name.
+	UPROPERTY(EditAnywhere)
+	bool ShowDisplayNames = false;
+
+	// Whether to hide the view options button in the menu.
+	UPROPERTY(EditAnywhere)
+	bool HideViewOptions = false;
 
 	// Specifies an interface that classes must implement in order to be selectable.
 	UPROPERTY(EditAnywhere)

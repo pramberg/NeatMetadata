@@ -361,8 +361,8 @@ bool UBPE_MetadataCollection_ShowOnlyInnerProperties::IsRelevantForContainedProp
 }
 #pragma endregion
 
-#pragma region Class Pickers
-bool UBPE_MetadataCollection_ClassPickers::IsRelevantForContainedProperty(const FProperty& InProperty) const
+#pragma region Class Picker
+bool UBPE_MetadataCollection_ClassPicker::IsRelevantForContainedProperty(const FProperty& InProperty) const
 {
 	return InProperty.IsA<FSoftClassProperty>() || InProperty.IsA<FClassProperty>();
 }
@@ -456,7 +456,7 @@ namespace
 	};
 }
 
-TSharedPtr<SWidget> UBPE_MetadataCollection_ClassPickers::CreateValueWidgetForProperty(const TSharedRef<IPropertyHandle>& InHandle)
+TSharedPtr<SWidget> UBPE_MetadataCollection_ClassPicker::CreateValueWidgetForProperty(const TSharedRef<IPropertyHandle>& InHandle)
 {
 	if (InHandle->GetProperty()->GetFName() == GET_MEMBER_NAME_CHECKED(ThisClass, MustImplement))
 	{
