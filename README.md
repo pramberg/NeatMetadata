@@ -14,6 +14,7 @@ Extension to blueprint properties to allow various metadata to be used that is o
 * `AllowedTypes`: [`PrimaryAssetId`] - Determines what `PrimaryAssetType`s are allowed to be selected.
 * `HideAlphaChannel`:  [`Color`, `LinearColor`] - Don't show the alpha channel in the widget.
 * `GetOptions`: [`String`/`Name`] - Create a dropdown of possible values.
+* `ShowOnlyInnerProperties`: Removes the parent scope around a struct property and displays all of its properties inline.
 
 ### Numeric Properties
 * `Units`: Choose what unit a property represents. (Meters, centimeters, degrees, bytes, etc.)
@@ -28,6 +29,20 @@ Extension to blueprint properties to allow various metadata to be used that is o
 ### File Path
 * `RelativeToGameDir`
 * `FilePathFilter`
+
+### Class Picker
+* `AllowAbstract`
+* `ShowTreeView`
+* `BlueprintBaseOnly`
+* `OnlyPlaceable`
+* `DisallowCreateNew`
+* `ShowDisplayNames`
+* `HideViewOptions`
+* `MustImplement`
+
+## Array
+* `NoElementDuplicate`
+* `EditFixedOrder`
 
 ### Curves
 * `XAxisName`: The name to display on the X axis of a runtime curve.
