@@ -100,11 +100,8 @@ TOptional<FString> UBPE_MetadataCollection::ExportValueForProperty(FProperty& Pr
 {
 	if (const FBoolProperty* AsBool = CastField<FBoolProperty>(&Property))
 	{
-		if (AsBool->GetPropertyValue_InContainer(this))
-		{
-			return FString();
-		}
-		return {};
+		static const FString TrueReturnValue = FString(TEXT("true"));
+		return AsBool->GetPropertyValue_InContainer(this) ? TOptional(TrueReturnValue) : NullOpt;
 	}
 
 	if (const FObjectPropertyBase* AsObject = CastField<FObjectPropertyBase>(&Property))
