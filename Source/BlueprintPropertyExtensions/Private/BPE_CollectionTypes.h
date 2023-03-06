@@ -369,3 +369,46 @@ public:
 protected:
 	virtual bool IsRelevantForProperty(const FProperty& InProperty) const override;
 };
+
+/** Small extensions to numeric properties. */
+UCLASS(meta=(DisplayName = "Numbers"))
+class UBPE_MetadataCollection_Numbers : public UBPE_MetadataCollection
+{
+	GENERATED_BODY()
+
+public:
+	// If true, removes the possibility to drag the widget. The user is then only allowed to write values into the box.
+	UPROPERTY(EditAnywhere)
+	bool NoSpinbox = false;
+
+	// Use exponential scale for the slider.
+	UPROPERTY(EditAnywhere, meta = (EditCondition = "!NoSpinbox", EditConditionHides))
+	float SliderExponent = 1.0f;
+
+	// Delta to increment the value as the slider moves. If not specified it will be determined by the spin box.
+	UPROPERTY(EditAnywhere, meta = (EditCondition = "!NoSpinbox", EditConditionHides))
+	float Delta = 0.0f;
+
+	// If we're an unbounded spin box, what value do we divide mouse movement by before multiplying by Delta. Requires Delta to be set.
+	UPROPERTY(EditAnywhere, meta = (EditCondition = "!NoSpinbox && Delta > 0.0", EditConditionHides))
+	float LinearDeltaSensitivity = 0.0f;
+
+	// How much to increment this value when the user is scrolling with their mouse wheel.
+	UPROPERTY(EditAnywhere, meta = (EditCondition = "!NoSpinbox", EditConditionHides))
+	float WheelStep = 0.0f;
+	
+	// This property is only allowed to be a multiple of this value. Value will be floored to the closest multiple.
+	UPROPERTY(EditAnywhere)
+	float Multiple = 1.0f;
+
+	// The name of an array property that this property will be clamped to.
+	UPROPERTY(EditAnywhere, meta = (GetOptions = "GetAllArrayProperties"))
+	FString ArrayClamp;
+
+protected:
+	UFUNCTION()
+	TArray<FString> GetAllArrayProperties() const;
+	virtual TOptional<FString> ExportValueForProperty(FProperty& Property) const override;
+	virtual bool IsRelevantForContainedProperty(const FProperty& InProperty) const override;
+	virtual bool IsPropertyVisible(const FProperty& Property) const override;
+};

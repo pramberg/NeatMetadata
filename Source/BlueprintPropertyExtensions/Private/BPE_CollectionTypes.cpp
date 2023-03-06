@@ -3,12 +3,24 @@
 #include "BPE_Module.h"
 #include "ClassViewerFilter.h"
 #include "DetailLayoutBuilder.h"
-#include "PropertyCustomizationHelpers.h"
-#include "SComponentClassCombo.h"
 
 #include "Curves/CurveLinearColor.h"
 #include "Curves/CurveVector.h"
 #include "Kismet2/BlueprintEditorUtils.h"
+
+namespace
+{
+	bool IsNumericProperty(const FProperty& InProperty)
+	{
+		// It seems like enum properties created in BP are byte properties, not enum properties...
+		if (const FByteProperty* AsByte = CastField<FByteProperty>(&InProperty))
+		{
+			return !AsByte->IsEnum();
+		}
+	
+		return InProperty.IsA<FNumericProperty>() && !InProperty.IsA<FEnumProperty>();
+	}
+}
 
 #pragma region Gameplay Tag Categories
 UBPE_MetadataCollection_GameplayTagCategories::UBPE_MetadataCollection_GameplayTagCategories()
@@ -25,7 +37,7 @@ TOptional<FString> UBPE_MetadataCollection_GameplayTagCategories::ExportValueFor
 	{
 		// ToStringSimple adds a ", ". The space causes issues when parsing multiple tags...
 		const FString Result = Categories.ToStringSimple().Replace(TEXT(" "), TEXT(""));
-		return Result.IsEmpty() ? NoPropertyValue : Result;
+		return Result.IsEmpty() ? NullOpt : TOptional(Result);
 	}
 	
 	return Super::ExportValueForProperty(Property);
@@ -53,25 +65,19 @@ void UBPE_MetadataCollection_GameplayTagCategories::ImportValueForProperty(const
 #pragma region Units
 bool UBPE_MetadataCollection_Units::IsRelevantForContainedProperty(const FProperty& InProperty) const
 {
-	// It seems like enum properties created in BP are byte properties, not enum properties...
-	if (const FByteProperty* AsByte = CastField<FByteProperty>(&InProperty))
-	{
-		return !AsByte->IsEnum();
-	}
-	
-	return InProperty.IsA<FNumericProperty>() && !InProperty.IsA<FEnumProperty>();
+	return IsNumericProperty(InProperty);
 }
 
 TOptional<FString> UBPE_MetadataCollection_Units::ExportValueForProperty(FProperty& Property) const
 {
 	if (Property.GetFName() == GET_MEMBER_NAME_CHECKED(ThisClass, Units) && Units == EUnit::Unspecified)
 	{
-		return NoPropertyValue;
+		return {};
 	}
 	
 	if (Property.GetFName() == GET_MEMBER_NAME_CHECKED(ThisClass, ForceUnits) && ForceUnits == EUnit::Unspecified)
 	{
-		return NoPropertyValue;
+		return {};
 	}
 	
 	return Super::ExportValueForProperty(Property);
@@ -117,7 +123,8 @@ TOptional<FString> UBPE_MetadataCollection_AssetBundles::ExportValueForProperty(
 {
 	if (Property.GetFName() == GET_MEMBER_NAME_CHECKED(ThisClass, AssetBundles))
 	{
-		return AssetBundles.IsEmpty() ? NoPropertyValue : FString::Join(AssetBundles, TEXT(","));
+		const FString Result = FString::Join(AssetBundles, TEXT(","));
+		return AssetBundles.IsEmpty() ? NullOpt : TOptional(Result);
 	}
 	
 	return Super::ExportValueForProperty(Property);
@@ -233,7 +240,7 @@ TOptional<FString> UBPE_MetadataCollection_GetOptions::ExportValueForProperty(FP
 		{
 			// TODO: Figure out how to log this inside the Blueprint editor...
 			UE_LOG(LogBlueprintPropertyExtensions, Error, TEXT("GetOptions[%s]: %s"), *CurrentWrapper.GetProperty()->GetName(), *ErrorString.GetValue());
-			return NoPropertyValue;
+			return {};
 		}
 	}
 	
@@ -331,7 +338,8 @@ TOptional<FString> UBPE_MetadataCollection_PrimaryAssetId::ExportValueForPropert
 {
 	if (Property.GetFName() == GET_MEMBER_NAME_CHECKED(ThisClass, AllowedTypes))
 	{
-		return AllowedTypes.IsEmpty() ? NoPropertyValue : FString::JoinBy(AllowedTypes, TEXT(","), [](const FPrimaryAssetType& Type) { return Type.ToString(); });
+		const FString Result = FString::JoinBy(AllowedTypes, TEXT(","), [](const FPrimaryAssetType& Type) { return Type.ToString(); });
+		return AllowedTypes.IsEmpty() ? NullOpt : TOptional(Result);
 	}
 	
 	return Super::ExportValueForProperty(Property);
@@ -389,7 +397,7 @@ namespace
 	{
 		SLATE_BEGIN_ARGS(SBPE_InterfaceClassSelector) {}
 		SLATE_END_ARGS()
-		
+
 		void Construct(const FArguments&, TSharedRef<IPropertyHandle> InPropertyHandle)
 		{
 			PropertyHandle = InPropertyHandle;
@@ -472,5 +480,55 @@ TSharedPtr<SWidget> UBPE_MetadataCollection_ClassPicker::CreateValueWidgetForPro
 bool UBPE_MetadataCollection_Array::IsRelevantForProperty(const FProperty& InProperty) const
 {
 	return InProperty.IsA<FArrayProperty>();
+}
+#pragma endregion
+
+#pragma region Numbers
+TArray<FString> UBPE_MetadataCollection_Numbers::GetAllArrayProperties() const
+{
+	TArray<FString> Results;
+	Results.Add(TEXT("None"));
+	for (const FArrayProperty* Property : TFieldRange<FArrayProperty>(CurrentWrapper.GetProperty()->GetOwnerClass()))
+	{
+		if (!Property->HasAnyPropertyFlags(CPF_DisableEditOnInstance))
+		{
+			Results.Add(Property->GetName());
+		}
+	}
+	return Results;
+}
+
+TOptional<FString> UBPE_MetadataCollection_Numbers::ExportValueForProperty(FProperty& Property) const
+{
+	if (Property.GetFName() == GET_MEMBER_NAME_CHECKED(ThisClass, ArrayClamp))
+	{
+		return (ArrayClamp.IsEmpty() || ArrayClamp == TEXT("None")) ? NullOpt : TOptional(ArrayClamp);
+	}
+	
+	return Super::ExportValueForProperty(Property);
+}
+
+bool UBPE_MetadataCollection_Numbers::IsRelevantForContainedProperty(const FProperty& InProperty) const
+{
+	return IsNumericProperty(InProperty);
+}
+
+bool UBPE_MetadataCollection_Numbers::IsPropertyVisible(const FProperty& Property) const
+{
+	if (!Super::IsPropertyVisible(Property))
+	{
+		return false;
+	}
+
+	static const FName ArrayClampName(GET_MEMBER_NAME_CHECKED(ThisClass, ArrayClamp));
+	static const FName MultipleName(GET_MEMBER_NAME_CHECKED(ThisClass, Multiple));
+	if (Property.GetFName() == ArrayClampName || Property.GetFName() == MultipleName)
+	{
+		const FNumericProperty* AsNumeric = CastField<FNumericProperty>(CurrentWrapper.GetProperty());
+		check(AsNumeric);
+		return AsNumeric->IsInteger();
+	}
+	
+	return true;
 }
 #pragma endregion
