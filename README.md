@@ -10,7 +10,7 @@ Extension to blueprint properties to allow various metadata to be used that is o
 ### General / Misc
 * `TitleProperty`: [`Array`] - determines the format of the header on each array element.
 * `Categories`: [`GameplayTag`] - The root gameplay tag that can be selected.
-* `AssetBundles`: [`SoftObjectReference`, `SoftClassReference`] - The root gameplay tag that can be selected.
+* `AssetBundles`: [`SoftObjectReference`, `SoftClassReference`] - Determines what asset bundles to put the object reference in. See [Asset Manager documentation](https://docs.unrealengine.com/5.1/en-US/asset-management-in-unreal-engine/#assetbundles) for more details.
 * `AllowedTypes`: [`PrimaryAssetId`] - Determines what `PrimaryAssetType`s are allowed to be selected.
 * `HideAlphaChannel`:  [`Color`, `LinearColor`] - Don't show the alpha channel in the widget.
 * `GetOptions`: [`String`/`Name`] - Create a dropdown of possible values.
