@@ -63,13 +63,10 @@ protected:
 	 */
 	virtual bool IsPropertyVisible(const FProperty& Property) const;
 	
-	/** Alias for the return value if you want to remove metadata in GetValueForProperty(). */
-	static inline TOptional<FString> NoPropertyValue = TOptional<FString>();
-	
 	/**
 	 * @brief Retrieves the value for the input property so that it can be stored as metadata.
 	 * @param Property The property on this object to retrieve the value from.
-	 * @return The value if you want to set it, or NoPropertyValue if you want to remove the metadata.
+	 * @return The value if you want to set it, or `NullOpt` if you want to remove the metadata.
 	 */
 	virtual TOptional<FString> ExportValueForProperty(FProperty& Property) const;
 	
