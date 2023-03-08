@@ -197,10 +197,12 @@ public:
 	// * The function needs to return a single array of Strings or Names.
 	// * The name of the output should be called "ReturnValue".
 	// * The function may not take any input parameters.
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, meta = (GetOptions = "GetAllValidFunctions"))
 	FString GetOptions;
 
 protected:
+	UFUNCTION()
+	TArray<FString> GetAllValidFunctions() const;
 	TOptional<FString> ValidateOptionsFunction(const FString& FunctionName) const;
 	virtual TOptional<FString> ExportValueForProperty(FProperty& Property) const override;;
 	virtual bool IsRelevantForContainedProperty(const FProperty& InProperty) const override;

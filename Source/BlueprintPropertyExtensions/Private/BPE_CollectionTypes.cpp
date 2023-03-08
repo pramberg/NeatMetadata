@@ -170,6 +170,39 @@ bool UBPE_MetadataCollection_TitleProperty::IsRelevantForContainedProperty(const
 #pragma endregion
 
 #pragma region Get Options
+TArray<FString> UBPE_MetadataCollection_GetOptions::GetAllValidFunctions() const
+{
+	TArray<FString> Functions;
+
+	const FProperty* EditedProperty = CurrentWrapper.GetProperty();
+	const UClass* OwnerClass = EditedProperty->GetOwnerClass();
+
+	for (const UFunction* Function : TObjectRange<UFunction>())
+	{
+		const bool bIsMemberFunction = Function->IsIn(OwnerClass);
+		if (!Function->HasAnyFunctionFlags(FUNC_Static) && !bIsMemberFunction)
+		{
+			continue;
+		}
+		
+		const FArrayProperty* AsArray = CastField<FArrayProperty>(Function->GetReturnProperty());
+		if (!AsArray || !AsArray->Inner || !(AsArray->Inner->IsA<FStrProperty>() || AsArray->Inner->IsA<FNameProperty>()))
+		{
+			continue;
+		}
+		
+		if (Function->NumParms != 1)
+		{
+			continue;
+		}
+
+		// Member functions shouldn't have a path. That's how the GetOptions metadata is expected.
+		Functions.Add(bIsMemberFunction ? Function->GetName() : Function->GetPathName());
+	}
+	
+	return Functions;
+}
+
 TOptional<FString> UBPE_MetadataCollection_GetOptions::ValidateOptionsFunction(const FString& FunctionName) const
 {
 	const UFunction* Function;
