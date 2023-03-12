@@ -6,6 +6,7 @@ Extension to blueprint properties to allow various metadata to be used that is o
 * `EditCondition`: Disable editing of the variable based on some condition.
 * `EditConditionHides`: Hides a property if it doesn't match the above condition.
 * `InlineEditConditionToggle`: Display the checkbox used as edit condition on the same row as the property.
+* `HideEditConditionToggle`: Hide the inline checkbox on this property.
 
 ### General / Misc
 * `TitleProperty`: [`Array`] - determines the format of the header on each array element.
