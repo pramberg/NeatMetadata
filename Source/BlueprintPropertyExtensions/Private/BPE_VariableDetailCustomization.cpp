@@ -19,31 +19,25 @@
 
 TSharedPtr<IDetailCustomization> BPE_VariableDetailCustomization::MakeInstance(TSharedPtr<IBlueprintEditor> InBlueprintEditor)
 {
-	const TArray<UObject*>* Objects = (InBlueprintEditor.IsValid() ? InBlueprintEditor->GetObjectsCurrentlyBeingEdited() : nullptr);
-	if (Objects)
+	const TArray<UObject*>* Objects = InBlueprintEditor.IsValid() ? InBlueprintEditor->GetObjectsCurrentlyBeingEdited() : nullptr;
+	if (!Objects)
 	{
-		TOptional<UBlueprint*> FinalBlueprint;
-		for (UObject* Object : *Objects)
+		return nullptr;
+	}
+		
+	UBlueprint* FinalBlueprint = nullptr;
+	for (UObject* Object : *Objects)
+	{
+		UBlueprint* Blueprint = Cast<UBlueprint>(Object);
+		if (!Blueprint || (FinalBlueprint && FinalBlueprint != Blueprint))
 		{
-			UBlueprint* Blueprint = Cast<UBlueprint>(Object);
-			if (Blueprint == nullptr)
-			{
-				return nullptr;
-			}
-			if (FinalBlueprint.IsSet() && FinalBlueprint.GetValue() != Blueprint)
-			{
-				return nullptr;
-			}
-			FinalBlueprint = Blueprint;
+			return nullptr;
 		}
-
-		if (FinalBlueprint.IsSet())
-		{
-			return MakeShared<BPE_VariableDetailCustomization>(FinalBlueprint.GetValue());
-		}
+		FinalBlueprint = Blueprint;
 	}
 
-	return nullptr;
+	check(FinalBlueprint);
+	return MakeShared<BPE_VariableDetailCustomization>(FinalBlueprint);
 }
 
 BPE_VariableDetailCustomization::BPE_VariableDetailCustomization(UBlueprint* InBlueprint) : Blueprint(InBlueprint)
@@ -62,20 +56,20 @@ void BPE_VariableDetailCustomization::CustomizeDetails(IDetailLayoutBuilder& Det
 			return;
 
 		auto MetaWrapper = FBPE_MetadataWrapper{PropertyBeingCustomized, Blueprint};
-
-		// The sorting seems to be as follows:
-		// Variable: 4000
-		// DefaultValue: 4001
-		//
-		// We want to insert our category in between, so push back Variable two steps, and our
-		// Metadata category one step.
+		
+		DetailLayout.SortCategories([](const TMap<FName, IDetailCategoryBuilder*>& InAllCategoryMap)
 		{
-			IDetailCategoryBuilder& VariableCategory = DetailLayout.EditCategory("Variable");
-			VariableCategory.SetSortOrder(VariableCategory.GetSortOrder() - 2);
-		}
+			IDetailCategoryBuilder* ValueCategory = InAllCategoryMap["DefaultValueCategory"];
+			IDetailCategoryBuilder* MetadataCategory = InAllCategoryMap["Metadata"];
+			
+			const int32 ValueSortOrder = ValueCategory->GetSortOrder();
+			const int32 MetadataSortOrder = MetadataCategory->GetSortOrder();
+
+			ValueCategory->SetSortOrder(MetadataSortOrder);
+			MetadataCategory->SetSortOrder(ValueSortOrder);
+		});
 		
 		IDetailCategoryBuilder& MetadataCategory = DetailLayout.EditCategory("Metadata", LOCTEXT("MetadataCategoryTitle", "Metadata"));
-		MetadataCategory.SetSortOrder(MetadataCategory.GetSortOrder() - 1);
 
 		TMap<FName, IDetailGroup*> GroupNameToGroup;
 		
