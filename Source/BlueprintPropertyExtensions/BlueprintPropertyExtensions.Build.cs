@@ -30,6 +30,8 @@ public class BlueprintPropertyExtensions : ModuleRules
 				"UnrealEd",
 				"PropertyEditor",
 				"ClassViewer",
+				"InputCore",
+				"BlueprintGraph",
 			}
 		);
 	}

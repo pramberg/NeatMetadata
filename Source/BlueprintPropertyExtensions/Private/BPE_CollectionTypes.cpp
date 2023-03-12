@@ -1,12 +1,15 @@
 ﻿// Copyright Viktor Pramberg. All Rights Reserved.
 #include "BPE_CollectionTypes.h"
 #include "BPE_Module.h"
-#include "ClassViewerFilter.h"
-#include "DetailLayoutBuilder.h"
+
+#include "Widgets/SBPE_InterfaceSelector.h"
+#include "Widgets/SBPE_FunctionSelector.h"
 
 #include "Curves/CurveLinearColor.h"
 #include "Curves/CurveVector.h"
+
 #include "Kismet2/BlueprintEditorUtils.h"
+#include "BlueprintEditorModule.h"
 
 namespace
 {
@@ -170,37 +173,40 @@ bool UBPE_MetadataCollection_TitleProperty::IsRelevantForContainedProperty(const
 #pragma endregion
 
 #pragma region Get Options
-TArray<FString> UBPE_MetadataCollection_GetOptions::GetAllValidFunctions() const
+namespace
 {
-	TArray<FString> Functions;
-
-	const FProperty* EditedProperty = CurrentWrapper.GetProperty();
-	const UClass* OwnerClass = EditedProperty->GetOwnerClass();
-
-	for (const UFunction* Function : TObjectRange<UFunction>())
+	bool GetOptionsFunctionFilter(const UFunction* InFunction, bool bInIsMemberFunction)
 	{
-		const bool bIsMemberFunction = Function->IsIn(OwnerClass);
-		if (!Function->HasAnyFunctionFlags(FUNC_Static) && !bIsMemberFunction)
+		if (!InFunction->HasAnyFunctionFlags(FUNC_Static) && !bInIsMemberFunction)
 		{
-			continue;
+			return false;
 		}
 		
-		const FArrayProperty* AsArray = CastField<FArrayProperty>(Function->GetReturnProperty());
+		const FArrayProperty* AsArray = CastField<FArrayProperty>(InFunction->GetReturnProperty());
 		if (!AsArray || !AsArray->Inner || !(AsArray->Inner->IsA<FStrProperty>() || AsArray->Inner->IsA<FNameProperty>()))
 		{
-			continue;
+			return false;
 		}
 		
-		if (Function->NumParms != 1)
+		if (InFunction->NumParms != 1)
 		{
-			continue;
+			return false;
 		}
+		return true;
+	}
+}
 
-		// Member functions shouldn't have a path. That's how the GetOptions metadata is expected.
-		Functions.Add(bIsMemberFunction ? Function->GetName() : Function->GetPathName());
+TSharedPtr<SWidget> UBPE_MetadataCollection_GetOptions::CreateValueWidgetForProperty(const TSharedRef<IPropertyHandle>& InHandle)
+{
+	if (InHandle->GetProperty()->GetFName() == GET_MEMBER_NAME_CHECKED(ThisClass, GetOptions))
+	{
+		return SNew(SBPE_FunctionSelector, InHandle)
+		.FunctionFilter_Static(&GetOptionsFunctionFilter)
+		.AddNewFunction_UObject(this, &ThisClass::OnAddNewFunction)
+		.MemberClass(CurrentWrapper.GetProperty()->GetOwnerClass());
 	}
 	
-	return Functions;
+	return Super::CreateValueWidgetForProperty(InHandle);
 }
 
 TOptional<FString> UBPE_MetadataCollection_GetOptions::ValidateOptionsFunction(const FString& FunctionName) const
@@ -282,7 +288,33 @@ TOptional<FString> UBPE_MetadataCollection_GetOptions::ExportValueForProperty(FP
 
 bool UBPE_MetadataCollection_GetOptions::IsRelevantForContainedProperty(const FProperty& InProperty) const
 {
-	return InProperty.IsA<FStrProperty>() || InProperty.IsA<FNameProperty>();
+	bIsString = InProperty.IsA<FStrProperty>();
+	return bIsString || InProperty.IsA<FNameProperty>();
+}
+
+TOptional<FString> UBPE_MetadataCollection_GetOptions::OnAddNewFunction() const
+{
+	UBlueprint* BP = CurrentWrapper.GetBlueprint();
+	
+	const FScopedTransaction Transaction(INVTEXT("Add New Function")); 
+	BP->Modify();
+
+	const FString DesiredName = FString::Printf(TEXT("%s_Options"), *CurrentWrapper.GetProperty()->GetName());
+	const FName UniqueName = FBlueprintEditorUtils::FindUniqueKismetName(BP, DesiredName);
+	
+	UEdGraph* NewGraph = FBlueprintEditorUtils::CreateNewGraph(BP, UniqueName, UEdGraph::StaticClass(), UEdGraphSchema_K2::StaticClass());
+
+	static const UFunction* StringFunc = StaticClass()->FindFunctionByName(GET_FUNCTION_NAME_CHECKED(ThisClass, GetOptionsStringSignature));
+	static const UFunction* NameFunc = StaticClass()->FindFunctionByName(GET_FUNCTION_NAME_CHECKED(ThisClass, GetOptionsNameSignature));
+	FBlueprintEditorUtils::AddFunctionGraph(BP, NewGraph, true, bIsString ? StringFunc : NameFunc);
+
+	{
+		UAssetEditorSubsystem* AssetEditorSubsystem = GEditor->GetEditorSubsystem<UAssetEditorSubsystem>();
+		IBlueprintEditor* Editor = static_cast<IBlueprintEditor*>(AssetEditorSubsystem->FindEditorForAsset(BP, false));
+		Editor->JumpToHyperlink(NewGraph, true);
+	}
+
+	return UniqueName.ToString();
 }
 #pragma endregion
 
@@ -408,100 +440,11 @@ bool UBPE_MetadataCollection_ClassPicker::IsRelevantForContainedProperty(const F
 	return InProperty.IsA<FSoftClassProperty>() || InProperty.IsA<FClassProperty>();
 }
 
-namespace
-{
-	// Class filter that only shows interfaces.
-	class FBPE_InterfaceClassFilter : public IClassViewerFilter
-	{
-	public:
-		virtual bool IsClassAllowed(const FClassViewerInitializationOptions& InInitOptions, const UClass* InClass, TSharedRef<FClassViewerFilterFuncs> InFilterFuncs) override
-		{
-			return InClass->HasAnyClassFlags(EClassFlags::CLASS_Interface);
-		}
-
-		virtual bool IsUnloadedClassAllowed(const FClassViewerInitializationOptions& InInitOptions, const TSharedRef<const IUnloadedBlueprintData> InClass, TSharedRef<FClassViewerFilterFuncs> InFilterFuncs) override
-		{
-			return InClass->HasAnyClassFlags(EClassFlags::CLASS_Interface);
-		}
-	};
-
-	// I wasn't able to find a way to get default class pickers to show all interfaces. That's what this widget does.
-	class SBPE_InterfaceClassSelector : public SCompoundWidget
-	{
-		SLATE_BEGIN_ARGS(SBPE_InterfaceClassSelector) {}
-		SLATE_END_ARGS()
-
-		void Construct(const FArguments&, TSharedRef<IPropertyHandle> InPropertyHandle)
-		{
-			PropertyHandle = InPropertyHandle;
-
-			ChildSlot
-			[
-				SNew(SComboButton)
-				.OnGetMenuContent(this, &SBPE_InterfaceClassSelector::GetMenuContent)
-				.ButtonContent()
-				[
-					SNew(STextBlock)
-					.Text(this, &SBPE_InterfaceClassSelector::GetButtonText)
-					.Font(IDetailLayoutBuilder::GetDetailFont())
-				]
-			];
-		}
-
-		UClass* GetClass() const
-		{
-			UObject* Obj;
-			PropertyHandle->GetValue(Obj);
-			return Cast<UClass>(Obj);
-		}
-
-		TSharedRef<SWidget> GetMenuContent()
-		{
-			FClassViewerModule& ClassViewerModule = FModuleManager::LoadModuleChecked<FClassViewerModule>("ClassViewer");
-			FClassViewerInitializationOptions Options;
-			Options.bShowUnloadedBlueprints = true;
-			Options.bShowNoneOption = true;
-			Options.bAllowViewOptions = false;
-			Options.NameTypeToDisplay = EClassViewerNameTypeToDisplay::DisplayName;
-			Options.InitiallySelectedClass = GetClass();
-			Options.ClassFilters.Add(MakeShared<FBPE_InterfaceClassFilter>());
-					
-			return SNew(SBox)
-				.WidthOverride(280)
-				[
-					SNew(SVerticalBox)
-					+SVerticalBox::Slot()
-					.AutoHeight()
-					.MaxHeight(500)
-					[
-						ClassViewerModule.CreateClassViewer(Options, FOnClassPicked::CreateSP(this, &SBPE_InterfaceClassSelector::OnClassPicked))
-					]
-				];
-		}
-
-		void OnClassPicked(UClass* InClass) const
-		{
-			if (GetClass() != InClass)
-			{
-				PropertyHandle->SetValue(InClass);
-			}
-		}
-
-		FText GetButtonText() const
-		{
-			return GetClass() ? GetClass()->GetDisplayNameText() : INVTEXT("None");
-		}
-
-	private:
-		TSharedPtr<IPropertyHandle> PropertyHandle;
-	};
-}
-
 TSharedPtr<SWidget> UBPE_MetadataCollection_ClassPicker::CreateValueWidgetForProperty(const TSharedRef<IPropertyHandle>& InHandle)
 {
 	if (InHandle->GetProperty()->GetFName() == GET_MEMBER_NAME_CHECKED(ThisClass, MustImplement))
 	{
-		return SNew(SBPE_InterfaceClassSelector, InHandle);
+		return SNew(SBPE_InterfaceSelector, InHandle);
 	}
 	
 	return Super::CreateValueWidgetForProperty(InHandle);
