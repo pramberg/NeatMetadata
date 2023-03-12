@@ -25,6 +25,49 @@ namespace
 	}
 }
 
+#pragma region Edit Condition
+bool UBPE_MetadataCollection_EditCondition::IsPropertyVisible(const FProperty& Property) const
+{
+	if (!Super::IsPropertyVisible(Property))
+	{
+		return false;
+	}
+
+	static const FName InlineEditConditionToggleName(GET_MEMBER_NAME_CHECKED(ThisClass, InlineEditConditionToggle));
+	if (Property.GetFName() == InlineEditConditionToggleName)
+	{
+		return CurrentWrapper.GetProperty()->IsA<FBoolProperty>();
+	}
+
+	static const FName EditConditionHidesName(GET_MEMBER_NAME_CHECKED(ThisClass, EditConditionHides));
+	if (Property.GetFName() == EditConditionHidesName)
+	{
+		return !EditCondition.IsEmpty();
+	}
+	
+	static const FName HideEditConditionToggleName(GET_MEMBER_NAME_CHECKED(ThisClass, HideEditConditionToggle));
+	if (Property.GetFName() == HideEditConditionToggleName)
+	{
+		if (EditCondition.IsEmpty())
+		{
+			return false;
+		}
+		
+		const FProperty* EditConditionProperty = CurrentWrapper.GetProperty()->GetOwnerClass()->FindPropertyByName(FName(EditCondition));
+		if (!EditConditionProperty)
+		{
+			// If we don't find a property we assume it's a more complicated expression. Those are not supported as inline edit conditions, so hide this property.
+			return false;
+		}
+		
+		return EditConditionProperty->IsA<FBoolProperty>() && EditConditionProperty->HasMetaData(InlineEditConditionToggleName);
+	}
+	
+	return true;
+}
+#pragma endregion
+
+
 #pragma region Gameplay Tag Categories
 UBPE_MetadataCollection_GameplayTagCategories::UBPE_MetadataCollection_GameplayTagCategories()
 {

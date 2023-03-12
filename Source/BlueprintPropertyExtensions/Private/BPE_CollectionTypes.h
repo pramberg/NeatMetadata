@@ -56,13 +56,23 @@ public:
 	UPROPERTY(EditAnywhere)
 	FString EditCondition;
 
-	// If the edit condition isn't met, should the property be hidden?
+	// If the edit condition isn't met, should this property be hidden?
 	UPROPERTY(EditAnywhere)
 	bool EditConditionHides;
 
-	// If this boolean property is used as an edit condition, should it be inlined next to the property?
+	// If this property is used as an edit condition, should it be displayed inline next to the other property?
+	// This is only supported for boolean properties.
 	UPROPERTY(EditAnywhere)
 	bool InlineEditConditionToggle;
+
+	// When the variable in the edit condition has `InlineEditConditionToggle` enabled, should it be hidden on this property?
+	// This setting can be useful if you use an inline condition variable to disable multiple properties, but only want the checkbox
+	// to be shown on one/some of those properties.
+	UPROPERTY(EditAnywhere)
+	bool HideEditConditionToggle;
+
+protected:
+	virtual bool IsPropertyVisible(const FProperty& Property) const override;
 };
 
 
