@@ -254,6 +254,11 @@ TSharedPtr<SWidget> UBPE_MetadataCollection_GetOptions::CreateValueWidgetForProp
 
 TOptional<FString> UBPE_MetadataCollection_GetOptions::ValidateOptionsFunction(const FString& FunctionName) const
 {
+	if (FunctionName.IsEmpty())
+	{
+		return NullOpt;
+	}
+	
 	const UFunction* Function;
 	if (FunctionName.Contains(TEXT(".")))
 	{
