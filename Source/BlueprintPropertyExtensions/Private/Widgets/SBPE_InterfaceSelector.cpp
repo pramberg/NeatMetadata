@@ -31,7 +31,7 @@ void SBPE_InterfaceSelector::Construct(const FArguments&, TSharedRef<IPropertyHa
 
 	ChildSlot
 	[
-		SNew(SComboButton)
+		SAssignNew(ComboButton, SComboButton)
 		.OnGetMenuContent(this, &SBPE_InterfaceSelector::GetMenuContent)
 		.ButtonContent()
 		[
@@ -50,7 +50,7 @@ TSharedRef<SWidget> SBPE_InterfaceSelector::GetMenuContent()
 	Options.bShowNoneOption = true;
 	Options.bAllowViewOptions = false;
 	Options.NameTypeToDisplay = EClassViewerNameTypeToDisplay::DisplayName;
-	Options.InitiallySelectedClass = GetClass();
+	Options.PropertyHandle = PropertyHandle;
 	Options.ClassFilters.Add(MakeShared<FBPE_InterfaceClassFilter>());
 
 	return SNew(SBox)
@@ -72,6 +72,8 @@ void SBPE_InterfaceSelector::OnClassPicked(UClass* InClass) const
 	{
 		PropertyHandle->SetValue(InClass);
 	}
+	
+	ComboButton->SetIsOpen(false);
 }
 
 UClass* SBPE_InterfaceSelector::GetClass() const

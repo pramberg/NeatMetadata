@@ -6,6 +6,7 @@
 #include "Internationalization/Text.h"
 
 class IPropertyHandle;
+class SComboButton;
 
 // Widget that displays all available interfaces.
 class SBPE_InterfaceSelector : public SCompoundWidget
@@ -23,4 +24,5 @@ protected:
 
 private:
 	TSharedPtr<IPropertyHandle> PropertyHandle;
+	TSharedPtr<SComboButton> ComboButton;
 };
