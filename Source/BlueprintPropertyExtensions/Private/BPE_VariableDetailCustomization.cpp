@@ -123,41 +123,19 @@ void BPE_VariableDetailCustomization::CustomizeDetails(IDetailLayoutBuilder& Det
 				if (const TSharedPtr<IPropertyHandle> Handle = DetailLayout.AddObjectPropertyData({ &Collection }, Property.GetFName()))
 				{
 					const TSharedPtr<SWidget> ValueWidget = Collection.CreateValueWidgetForProperty(Handle.ToSharedRef());
-					if (Group)
+					IDetailPropertyRow& CreatedRow = Group ? Group->AddPropertyRow(Handle.ToSharedRef()) : MetadataCategory.AddProperty(Handle);
+
+					if (ValueWidget)
 					{
-						if (ValueWidget)
-						{
-							Group->AddWidgetRow().NameContent()
-							[
-								Handle->CreatePropertyNameWidget()
-							]
-							.ValueContent()
-							[
-								ValueWidget.ToSharedRef()
-							];
-						}
-						else
-						{
-							Group->AddPropertyRow(Handle.ToSharedRef());
-						}
-					}
-					else
-					{
-						if (ValueWidget)
-						{
-							MetadataCategory.AddCustomRow(Property.GetDisplayNameText()).NameContent()
-							[
-								Handle->CreatePropertyNameWidget()
-							]
-							.ValueContent()
-							[
-								ValueWidget.ToSharedRef()
-							];
-						}
-						else
-						{
-							MetadataCategory.AddProperty(Handle);
-						}
+						CreatedRow.CustomWidget()
+						.NameContent()
+						[
+							Handle->CreatePropertyNameWidget()
+						]
+						.ValueContent()
+						[
+							ValueWidget.ToSharedRef()
+						];
 					}
 				}
 			});
