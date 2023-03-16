@@ -2,6 +2,7 @@
 #include "SBPE_FunctionSelector.h"
 #include "Widgets/Input/SSearchBox.h"
 #include "SListViewSelectorDropdownMenu.h"
+#include "Styling/SlateIconFinder.h"
 
 enum class EBPE_FunctionSelectorItemType : uint8
 {
@@ -23,18 +24,26 @@ struct FBPE_FunctionSelectorItem
 	explicit FBPE_FunctionSelectorItem(const UFunction* InFunction, const bool bIsMemberFunction) :
 		Object(InFunction),
 		ItemType(bIsMemberFunction ? EBPE_FunctionSelectorItemType::MemberFunction : EBPE_FunctionSelectorItemType::StaticFunction),
-		ToolTip(InFunction ? InFunction->GetToolTipText() : FText())
+		ToolTip(InFunction ? InFunction->GetToolTipText() : FText()),
+		Value(bIsMemberFunction ? InFunction->GetName() : InFunction->GetPathName()),
+		Icon(FAppStyle::GetBrush(TEXT("Kismet.AllClasses.FunctionIcon")))
 	{}
 
 	explicit FBPE_FunctionSelectorItem(const FText InText, const FText InToolTip = FText(), EBPE_FunctionSelectorItemType InItemType = EBPE_FunctionSelectorItemType::None) :
 		ItemType(InItemType),
 		DisplayName(InText),
-		ToolTip(InToolTip)
+		ToolTip(InToolTip),
+		Icon(FSlateIconFinder::FindIconBrushForClass(nullptr))
 	{}
 
-	void SetDisplayName(const FText InText)
+	void SetDisplayName(const FText& InText)
 	{
 		DisplayName = InText;
+	}
+
+	void SetIcon(const FSlateBrush* InIcon)
+	{
+		Icon = InIcon;
 	}
 
 protected:
@@ -42,6 +51,8 @@ protected:
 	EBPE_FunctionSelectorItemType ItemType = EBPE_FunctionSelectorItemType::None;
 	FText DisplayName;
 	FText ToolTip;
+	FString Value;
+	const FSlateBrush* Icon = nullptr;
 	TArray<FBPE_FunctionSelectorItemPtr> Children;
 
 	friend class SBPE_FunctionSelector;
@@ -54,7 +65,7 @@ void SBPE_FunctionSelector::Construct(const FArguments& InArgs, TSharedRef<IProp
 	FunctionFilter = InArgs._FunctionFilter;
 	AddNewFunction = InArgs._AddNewFunction;
 	MemberClass = InArgs._MemberClass;
-		
+	
 	ChildSlot
 	[
 		SAssignNew(ComboButton, SComboButton)
@@ -102,30 +113,30 @@ TSharedRef<SWidget> SBPE_FunctionSelector::OnGetMenuContent()
 	ComboButton->SetMenuContentWidgetToFocus(SearchBox);
 	if (!FilteredItems.IsEmpty())
 	{
-		TreeView->SetItemExpansion(FilteredItems[0], true);
+		TreeView->SetItemExpansion(FilteredItems[1], true);
 	}
 	
 	return SNew(SListViewSelectorDropdownMenu<FBPE_FunctionSelectorItemPtr>, SearchBox, TreeView)
-	[
-		SNew(SVerticalBox)
-		+SVerticalBox::Slot()
-		.AutoHeight()
-		.Padding(4.0f)
 		[
-			SearchBox.ToSharedRef()
-		]
-		+SVerticalBox::Slot()
-		.AutoHeight()
-		.Padding(4.0f)
-		[
-			SNew(SBox)
-			.HeightOverride(400.0f)
-			.WidthOverride(300.0f)
+			SNew(SVerticalBox)
+			+SVerticalBox::Slot()
+			.AutoHeight()
+			.Padding(4.0f)
 			[
-				TreeView.ToSharedRef()
+				SearchBox.ToSharedRef()
 			]
-		]
-	];
+			+SVerticalBox::Slot()
+			.AutoHeight()
+			.Padding(4.0f)
+			[
+				SNew(SBox)
+				.HeightOverride(400.0f)
+				.WidthOverride(300.0f)
+				[
+					TreeView.ToSharedRef()
+				]
+			]
+		];
 }
 
 void SBPE_FunctionSelector::OnSelectionChanged(FBPE_FunctionSelectorItemPtr InSelection, ESelectInfo::Type InSelectInfo) const
@@ -163,7 +174,7 @@ void SBPE_FunctionSelector::OnSearchTextChanged(const FText& ChangedText)
 		
 		if (!FilteredItems.IsEmpty())
 		{
-			TreeView->SetItemExpansion(FilteredItems[0], true);
+			TreeView->SetItemExpansion(FilteredItems[1], true);
 		}
 	}
 	else
@@ -212,37 +223,34 @@ void SBPE_FunctionSelector::SetCurrentItem(FBPE_FunctionSelectorItemPtr InItem) 
 		return;
 	}
 	
-	check(InItem->ItemType == EBPE_FunctionSelectorItemType::MemberFunction || InItem->ItemType == EBPE_FunctionSelectorItemType::StaticFunction);
-	PropertyHandle->SetValue(InItem->ItemType == EBPE_FunctionSelectorItemType::MemberFunction ? InItem->Object->GetName() : InItem->Object->GetPathName());
+	PropertyHandle->SetValue(InItem->Value);
+
+	ComboButton->SetIsOpen(false);
 }
 
 TSharedRef<ITableRow> SBPE_FunctionSelector::OnGenerateRow(FBPE_FunctionSelectorItemPtr InItem, const TSharedRef<STableViewBase>& InParent) const
 {
-	static const FSlateBrush* const IconBrush = FAppStyle::GetBrush(TEXT("Kismet.AllClasses.FunctionIcon"));
-	static const FSlateBrush* const AddFunction = FAppStyle::Get().GetBrush("Icons.PlusCircle");
 	return SNew(STableRow<TSharedPtr<FText>>, InParent)
 	[
 		SNew(SHorizontalBox)
 		.ToolTipText(InItem->ToolTip)
 		+SHorizontalBox::Slot()
 		.AutoWidth()
+		.Padding(0.0f, 3.0f, 6.0f, 3.0f)
 		[
 			SNew(SImage)
- 			.Image(InItem->ItemType == EBPE_FunctionSelectorItemType::AddNewFunction ? AddFunction : IconBrush)
- 			.Visibility(InItem->Children.IsEmpty() ? EVisibility::Visible : EVisibility::Collapsed)
-		]
-		+SHorizontalBox::Slot()
-		.AutoWidth()
-		[
-			SNew(SSpacer).Size(4.0f).Visibility(EVisibility::Visible)
+			.Image(InItem->Icon)
+			.Visibility(InItem->Children.IsEmpty() ? EVisibility::Visible : EVisibility::Collapsed)
 		]
 		+SHorizontalBox::Slot()
 		.FillWidth(1.0f)
+		.VAlign(VAlign_Center)
+		.Padding(0.0f, 3.0f, 6.0f, 3.0f)
 		[
 			SNew(STextBlock)
 			.Text(InItem->DisplayName.IsEmpty() && InItem->Object.IsValid() ? InItem->Object->GetDisplayNameText() : InItem->DisplayName)
 			.HighlightText_Lambda([this]() { return SearchText; })
-			.Font(InItem->Children.IsEmpty() ? FAppStyle::GetFontStyle(TEXT("Kismet.TypePicker.NormalFont")) : FAppStyle::GetFontStyle(TEXT("Kismet.TypePicker.CategoryFont")))
+			.Font(InItem->Children.IsEmpty() ? FAppStyle::GetFontStyle(TEXT("NormalFont")) : FAppStyle::GetFontStyle(TEXT("NormalFontItalic")))
 		]
  			
 	];
@@ -252,12 +260,17 @@ void SBPE_FunctionSelector::RefreshFunctions()
 {
 	Items.Reset();
 
+	{
+		Items.Add(MakeShared<FBPE_FunctionSelectorItem>(INVTEXT("None")));
+	}
+
 	const UClass* OwnerClass = MemberClass.Get(nullptr);
+	FBPE_FunctionSelectorItemPtr OwnerItem;
 	if (OwnerClass)
 	{
-		const FBPE_FunctionSelectorItemPtr Owner = MakeShared<FBPE_FunctionSelectorItem>(OwnerClass);
-		Owner->SetDisplayName(FText::Format(INVTEXT("{0} (Self)"), OwnerClass->GetDisplayNameText()));
-		Items.Add(Owner);
+		OwnerItem = MakeShared<FBPE_FunctionSelectorItem>(OwnerClass);
+		OwnerItem->SetDisplayName(FText::Format(INVTEXT("{0} (Self)"), OwnerClass->GetDisplayNameText()));
+		Items.Add(OwnerItem);
 	}
 
 	auto IsMemberFunction = [OwnerClass](const UFunction* Function)
@@ -281,9 +294,9 @@ void SBPE_FunctionSelector::RefreshFunctions()
 		}
 
 		auto Item = MakeShared<FBPE_FunctionSelectorItem>(Function, bIsMemberFunction);
-		if (bIsMemberFunction)
+		if (bIsMemberFunction && OwnerItem)
 		{
-			Items[0]->Children.Add(Item);
+			OwnerItem->Children.Add(Item);
 		}
 		else
 		{
@@ -297,7 +310,12 @@ void SBPE_FunctionSelector::RefreshFunctions()
 		}
 	}
 
-	static const FText AddFunctionName(INVTEXT("Add new function..."));
-	static const FText AddFunctionTooltip(INVTEXT("Adds a new function with the correct signature to be used with this property."));
-	Items[0]->Children.Add(MakeShared<FBPE_FunctionSelectorItem>(AddFunctionName, AddFunctionTooltip, EBPE_FunctionSelectorItemType::AddNewFunction));
+	if (OwnerItem)
+	{
+		static const FText AddFunctionName(INVTEXT("Add new function..."));
+		static const FText AddFunctionTooltip(INVTEXT("Adds a new function with the correct signature to be used with this property."));
+		const auto Item = MakeShared<FBPE_FunctionSelectorItem>(AddFunctionName, AddFunctionTooltip, EBPE_FunctionSelectorItemType::AddNewFunction);
+		Item->SetIcon(FAppStyle::GetBrush(TEXT("Icons.PlusCircle")));
+		OwnerItem->Children.Add(Item);
+	}
 }
