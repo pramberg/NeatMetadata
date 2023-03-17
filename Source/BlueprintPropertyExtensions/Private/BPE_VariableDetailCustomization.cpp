@@ -141,7 +141,7 @@ void BPE_VariableDetailCustomization::CustomizeDetails(IDetailLayoutBuilder& Det
 			});
 		});
 		
-		if (!PropertyBeingCustomized->GetMetaDataMap())
+		if (!PropertyBeingCustomized->GetMetaDataMap() || !GetDefault<UBPE_UserSettings>()->bShowAllMetadataCategory)
 			return;
 
 		auto& Group = MetadataCategory.AddGroup("All Metadata", LOCTEXT("All Metadata", "All Metadata"));

@@ -6,6 +6,7 @@
 
 UBPE_Settings::UBPE_Settings()
 {
+	CategoryName = "Plugins";
 }
 
 void UBPE_Settings::ForEachCollection(TFunctionRef<FForEachCollectionSignature> Functor) const
@@ -75,4 +76,9 @@ void UBPE_Settings::PostInitProperties()
 	Super::PostInitProperties();
 
 	RebuildMetadataCollections();
+}
+
+UBPE_UserSettings::UBPE_UserSettings()
+{
+	CategoryName = "Plugins";
 }

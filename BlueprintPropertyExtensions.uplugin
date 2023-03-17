@@ -10,6 +10,7 @@
 	"DocsURL": "https://github.com/pramberg/BlueprintPropertyExtensions/wiki",
 	"MarketplaceURL": "",
 	"SupportURL": "https://github.com/pramberg/BlueprintPropertyExtensions/issues",
+	"EnabledByDefault": true,
 	"CanContainContent": true,
 	"IsBetaVersion": false,
 	"IsExperimentalVersion": true,
@@ -24,7 +25,8 @@
 	"Plugins": [
 		{
 			"Name": "GameplayTagsEditor",
-			"Enabled": true
+			"Enabled": true,
+			"Optional": true
 		}
 	]
 }
