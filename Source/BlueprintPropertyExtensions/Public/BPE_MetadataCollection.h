@@ -103,6 +103,6 @@ public:
 	virtual bool IsRelevantForContainedProperty(const FProperty& InProperty) const override;
 	
 protected:
-	UPROPERTY(EditDefaultsOnly)
+	UPROPERTY(EditDefaultsOnly, Category = "Metadata Collection")
 	TArray<TObjectPtr<UScriptStruct>> Structs;
 };
