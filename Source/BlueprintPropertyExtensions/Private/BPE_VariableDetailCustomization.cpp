@@ -8,8 +8,6 @@
 #include "BPE_Settings.h"
 #include "DetailCategoryBuilder.h"
 #include "DetailWidgetRow.h"
-#include "GameplayTagContainer.h"
-#include "GameplayTagsEditorModule.h"
 #include "IDetailGroup.h"
 #include "Widgets/Input/SEditableText.h"
 #include "Widgets/Input/SEditableTextBox.h"
@@ -55,7 +53,7 @@ void BPE_VariableDetailCustomization::CustomizeDetails(IDetailLayoutBuilder& Det
 		if (!PropertyBeingCustomized)
 			return;
 
-		auto MetaWrapper = FBPE_MetadataWrapper{PropertyBeingCustomized, Blueprint};
+		FBPE_MetadataWrapper MetaWrapper {PropertyBeingCustomized, Blueprint};
 		
 		DetailLayout.SortCategories([](const TMap<FName, IDetailCategoryBuilder*>& InAllCategoryMap)
 		{
@@ -122,10 +120,8 @@ void BPE_VariableDetailCustomization::CustomizeDetails(IDetailLayoutBuilder& Det
 			{
 				if (const TSharedPtr<IPropertyHandle> Handle = DetailLayout.AddObjectPropertyData({ &Collection }, Property.GetFName()))
 				{
-					const TSharedPtr<SWidget> ValueWidget = Collection.CreateValueWidgetForProperty(Handle.ToSharedRef());
 					IDetailPropertyRow& CreatedRow = Group ? Group->AddPropertyRow(Handle.ToSharedRef()) : MetadataCategory.AddProperty(Handle);
-
-					if (ValueWidget)
+					if (const TSharedPtr<SWidget> ValueWidget = Collection.CreateValueWidgetForProperty(Handle.ToSharedRef()))
 					{
 						CreatedRow.CustomWidget()
 						.NameContent()
@@ -144,12 +140,12 @@ void BPE_VariableDetailCustomization::CustomizeDetails(IDetailLayoutBuilder& Det
 		if (!PropertyBeingCustomized->GetMetaDataMap() || !GetDefault<UBPE_UserSettings>()->bShowAllMetadataCategory)
 			return;
 
-		auto& Group = MetadataCategory.AddGroup("All Metadata", LOCTEXT("All Metadata", "All Metadata"));
+		IDetailGroup& Group = MetadataCategory.AddGroup("All Metadata", LOCTEXT("All Metadata", "All Metadata"));
 
 		for (auto& [Key, Value] : *PropertyBeingCustomized->GetMetaDataMap())
 		{
 			Group.AddWidgetRow()
-			     .NameContent()
+				.NameContent()
 				[
 					SNew(STextBlock)
 					.Font(DetailLayout.GetDetailFont())
@@ -167,6 +163,21 @@ void BPE_VariableDetailCustomization::CustomizeDetails(IDetailLayoutBuilder& Det
 							MetaWrapper.SetMetadata(Key, Text.ToString());
 						}
 					)
+				]
+				.ExtensionContent()
+				[
+					SNew(SButton)
+					.ToolTipText(LOCTEXT("RemoveMetadataTooltip", "Remove metadata."))
+					.ButtonStyle(FAppStyle::Get(), "SimpleButton")
+					.OnClicked_Lambda([Key, MetaWrapper]()
+					{
+						MetaWrapper.RemoveMetadata(Key);
+						return FReply::Handled();
+					})
+					[
+						SNew(SImage)
+						.Image(FAppStyle::GetBrush(TEXT("Icons.X")))
+					]
 				];
 		}
 	}
