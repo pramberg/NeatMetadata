@@ -193,7 +193,7 @@ protected:
 
 
 /** Exposes the possibility to specify a list of strings as an option to String or Name variables. */
-UCLASS(meta=(DisplayName = "Get Options", Group = "General"))
+UCLASS(meta=(DisplayName = "Get Options", Group = "Text"))
 class UBPE_MetadataCollection_GetOptions : public UBPE_MetadataCollectionStruct
 {
 	GENERATED_BODY()
@@ -230,7 +230,7 @@ private:
 
 
 
-/** Exposes the possibility to specify a list of strings as an option to String or Name variables. */
+/** Exposes metadata specific to the FDirectoryPath variable type. Can be used to customize what type of interface is used, and what type of path to return. */
 UCLASS(meta=(DisplayName = "Directory Path", Group = "Paths"))
 class UBPE_MetadataCollection_DirectoryPath : public UBPE_MetadataCollectionStruct
 {
@@ -239,17 +239,17 @@ class UBPE_MetadataCollection_DirectoryPath : public UBPE_MetadataCollectionStru
 public:
 	UBPE_MetadataCollection_DirectoryPath();
 
-	UPROPERTY(EditAnywhere, Category = "Directory Path")
+	// Should the path be relative to the engine directory. By default the path is absolute.
+	UPROPERTY(EditAnywhere, Category = "Directory Path", meta = (EditCondition = "!ContentDir && !RelativeToGameContentDir", EditConditionHides))
 	bool RelativePath;
 
-	UPROPERTY(EditAnywhere, Category = "Directory Path")
+	// Should the path be relative to ContentDir, in this format: "/Game/Path/To/Dir". Uses a custom widget that only shows content paths.
+	UPROPERTY(EditAnywhere, Category = "Directory Path", meta = (EditCondition = "!RelativePath && !RelativeToGameContentDir", EditConditionHides))
 	bool ContentDir;
 
-	UPROPERTY(EditAnywhere, Category = "Directory Path")
+	// Should the path be relative to the game directory, i.e. for "Content/Path/To/Dir" it returns "Path/To/Dir". The path must be inside the game directory.
+	UPROPERTY(EditAnywhere, Category = "Directory Path", meta = (EditCondition = "!RelativePath && !ContentDir", EditConditionHides))
 	bool RelativeToGameContentDir;
-
-	UPROPERTY(EditAnywhere, Category = "Directory Path")
-	bool LongPackageName;
 };
 
 
@@ -260,15 +260,15 @@ struct FBPE_FilePathFilter
 	GENERATED_BODY()
 
 	// The file extension to filter for. Does not need "*.".
-	UPROPERTY(EditAnywhere, Category = "Metadata Collection")
+	UPROPERTY(EditAnywhere, Category = "File Path")
 	FString Extension;
 
 	// Optional description of this filter. If empty this will be generated from the extension.
-	UPROPERTY(EditAnywhere, Category = "Metadata Collection")
+	UPROPERTY(EditAnywhere, Category = "File Path")
 	FString Description;
 };
 
-/** Exposes the possibility to specify a list of strings as an option to String or Name variables. */
+/** Exposes metadata specific to the FFilePath variable type. Can be used to customize what files can be selected, and what type of path to return. */
 UCLASS(meta=(DisplayName = "File Path", Group = "Paths"))
 class UBPE_MetadataCollection_FilePath : public UBPE_MetadataCollectionStruct
 {
@@ -277,10 +277,15 @@ class UBPE_MetadataCollection_FilePath : public UBPE_MetadataCollectionStruct
 public:
 	UBPE_MetadataCollection_FilePath();
 
-	UPROPERTY(EditAnywhere, Category = "File Path")
+	// Should the path be a LongPackageName, i.e. "/Game/Path/To/File"? Otherwise the path will be relative to engine directory.
+	UPROPERTY(EditAnywhere, Category = "File Path", meta = (EditCondition = "!RelativeToGameDir", EditConditionHides))
+	bool LongPackageName;
+	
+	// Should the path be relative to the game directory, i.e. "Content/Path/To/File.extension"? Otherwise the path will be relative to engine directory.
+	UPROPERTY(EditAnywhere, Category = "File Path", meta = (EditCondition = "!LongPackageName", EditConditionHides))
 	bool RelativeToGameDir;
 
-	// The File Path Filter describes what file types should show up in the file picker.
+	// Describes what file types should show up in the file picker.
 	UPROPERTY(EditAnywhere, DisplayName = "File Path Filter", Category = "File Path", meta = (TitleProperty = "{Description} (*.{Extension})"))
 	TArray<FBPE_FilePathFilter> FilePathFilter_Internal;
 
@@ -291,7 +296,7 @@ protected:
 
 
 
-/** Exposes the possibility to specify a list of strings as an option to String or Name variables. */
+/** Metadata specific to primary asset ids. */
 UCLASS(meta=(DisplayName = "Primary Asset Id", Group = "General"))
 class UBPE_MetadataCollection_PrimaryAssetId : public UBPE_MetadataCollectionStruct
 {
@@ -300,6 +305,7 @@ class UBPE_MetadataCollection_PrimaryAssetId : public UBPE_MetadataCollectionStr
 public:
 	UBPE_MetadataCollection_PrimaryAssetId();
 
+	// Determines what PrimaryAssetTypes are allowed to be selected by this property.
 	UPROPERTY(EditAnywhere, Category = "Primary Asset Id")
 	TSet<FPrimaryAssetType> AllowedTypes;
 
@@ -373,7 +379,7 @@ protected:
 
 
 
-/** Some arcane and obscure array-specific metadata. */
+/** Array-specific metadata. */
 UCLASS(meta=(DisplayName = "Array", Group = "Array"))
 class UBPE_MetadataCollection_Array : public UBPE_MetadataCollection
 {
@@ -391,6 +397,8 @@ public:
 protected:
 	virtual bool IsRelevantForProperty(const FProperty& InProperty) const override;
 };
+
+
 
 /** Small extensions to numeric properties. */
 UCLASS(meta=(DisplayName = "Numbers"))
@@ -433,4 +441,156 @@ protected:
 	virtual TOptional<FString> ExportValueForProperty(FProperty& Property) const override;
 	virtual bool IsRelevantForContainedProperty(const FProperty& InProperty) const override;
 	virtual bool IsPropertyVisible(const FProperty& Property) const override;
+};
+
+
+
+/** Removes the "Reset To Default" button from this property. */
+UCLASS(meta=(DisplayName = "No Reset To Default", Group = "General"))
+class UBPE_MetadataCollection_NoResetToDefault : public UBPE_MetadataCollection
+{
+	GENERATED_BODY()
+
+public:
+	// Removes the "Reset To Default" button from this property.
+	UPROPERTY(EditAnywhere, Category = "No Reset To Default")
+	bool NoResetToDefault = false;
+};
+
+
+
+/** Enables the possibility to show the lock that preserves aspect ratio on multi-dimensional properties. */
+UCLASS(meta=(DisplayName = "Allow Preserve Ratio", Group = "General"))
+class UBPE_MetadataCollection_AllowPreserveRatio : public UBPE_MetadataCollection
+{
+	GENERATED_BODY()
+
+public:
+	// If enabled, shows the preserve aspect ratio button on this property.
+	UPROPERTY(EditAnywhere, Category = "Allow Preserve Ratio")
+	bool AllowPreserveRatio = false;
+
+protected:
+	virtual bool IsRelevantForContainedProperty(const FProperty& InProperty) const override;
+};
+
+
+
+USTRUCT()
+struct FBPE_AssetDataTagKeyValue
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, Category = "Asset Data Tags")
+	FString Key;
+
+	UPROPERTY(EditAnywhere, Category = "Asset Data Tags")
+	FString Value;
+};
+
+/** Metadata that allows you to control what assets are displayed in an asset property. */
+UCLASS(meta=(DisplayName = "Assets"))
+class UBPE_MetadataCollection_Assets : public UBPE_MetadataCollection
+{
+	GENERATED_BODY()
+
+public:
+	// Asset registry metadata tags that are required to exist in order to show the asset. This can be very useful on vast amount of properties.
+	// DataTables are an example, where you can say: Key = "RowStructure" and Value = "/Path/To/Struct" to only show DataTables of the correct type.
+	UPROPERTY(EditAnywhere, DisplayName = "Required Asset Data Tags", Category = "Assets")
+	TArray<FBPE_AssetDataTagKeyValue> RequiredAssetDataTags_Internal;
+
+	// The opposite of RequiredAssetDataTags. Asset registry metadata tags that are NOT allowed to be present on the asset.
+	UPROPERTY(EditAnywhere, DisplayName = "Disallowed Asset Data Tags", Category = "Assets")
+	TArray<FBPE_AssetDataTagKeyValue> DisallowedAssetDataTags_Internal;
+	
+	// Whether to force engine content to be visible in the editor regardless of the user's current settings.
+	UPROPERTY(EditAnywhere, Category = "Assets")
+	bool ForceShowEngineContent = false;
+
+	// Whether to force plugin content to be visible in the editor regardless of the user's current settings.
+	UPROPERTY(EditAnywhere, Category = "Assets")
+	bool ForceShowPluginContent = false;
+
+	// Whether the user is only allowed to select the exact allowed classes. Note that this does not change what assets that are displayed in the editor...
+	// It only disallows *selecting* assets that aren't the exact class.
+	UPROPERTY(EditAnywhere, Category = "Assets")
+	bool ExactClass = false;
+
+	// Classes that are allowed to be selected. Mostly useful on Object properties where you may want both Materials and Textures to be selectable.
+	UPROPERTY(EditAnywhere, Category = "Assets", meta = (AllowAbstract = "true"))
+	TArray<TSoftClassPtr<UObject>> AllowedClasses;
+
+	// Classes that are not allowed to be displayed. Say you want to display all Textures, except for TextureLightProfiles. Then you'd specify TextureLightProfile here.
+	UPROPERTY(EditAnywhere, Category = "Assets", meta = (AllowAbstract = "true"))
+	TArray<TSoftClassPtr<UObject>> DisallowedClasses;
+	
+protected:
+	virtual bool IsRelevantForContainedProperty(const FProperty& InProperty) const override;
+	virtual TOptional<FString> ExportValueForProperty(FProperty& Property) const override;
+	virtual void ImportValueForProperty(const FProperty& Property, const FString& Value) override;;
+};
+
+
+
+/** Exposes the RowType property on DataTableRowHandles. It allows the user to specify a specific struct that a data table must use in order to be displayed. */
+UCLASS(meta=(DisplayName = "Row Type", Group = "General"))
+class UBPE_MetadataCollection_RowType : public UBPE_MetadataCollectionStruct
+{
+	GENERATED_BODY()
+
+public:
+	UBPE_MetadataCollection_RowType();
+	
+	// The type of struct that can be specified for this data table.
+	UPROPERTY(EditAnywhere, Category = "Row Type", meta = (GetOptions="GetPossibleRowTypes"))
+	FString RowType;
+
+protected:
+	UFUNCTION()
+	static TArray<FString> GetPossibleRowTypes();
+	virtual TOptional<FString> ExportValueForProperty(FProperty& Property) const override;
+};
+
+
+
+/** Properties related to properties that are edited using a text box. */
+UCLASS(meta=(DisplayName = "Text", Group = "Text"))
+class UBPE_MetadataCollection_Text : public UBPE_MetadataCollection
+{
+	GENERATED_BODY()
+
+public:
+	// Indicates that this field represents a password, and will be displayed using asterisks (*).
+	// This does not indicate any other sort of safety related to the property, only how the string is displayed to the user.
+	UPROPERTY(EditAnywhere, Category = "Text")
+	bool PasswordField;
+
+	// The maximum number of characters that are allowed.
+	UPROPERTY(EditAnywhere, Category = "Text")
+    int32 MaxLength = 0;
+
+protected:
+	virtual bool IsRelevantForContainedProperty(const FProperty& InProperty) const override;
+};
+
+
+
+/** Map-specific properties. */
+UCLASS(meta=(DisplayName = "Map", Group = "Map"))
+class UBPE_MetadataCollection_Map : public UBPE_MetadataCollection
+{
+	GENERATED_BODY()
+
+public:
+	// Makes the keys of this property read only.
+	UPROPERTY(EditAnywhere, Category = "Map")
+	bool ReadOnlyKeys = false;
+
+	// Forces the key and value to be displayed on the same row. Some complicated properties, like GameplayTags may otherwise be placed on multiple rows.
+	UPROPERTY(EditAnywhere, Category = "Map")
+	bool ForceInlineRow = false;
+
+protected:
+	virtual bool IsRelevantForProperty(const FProperty& InProperty) const override;
 };

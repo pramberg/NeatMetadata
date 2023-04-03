@@ -10,6 +10,9 @@
 
 #include "Kismet2/BlueprintEditorUtils.h"
 #include "BlueprintEditorModule.h"
+#include "DataTableEditorUtils.h"
+
+#include "Algo/Transform.h"
 
 namespace
 {
@@ -66,7 +69,6 @@ bool UBPE_MetadataCollection_EditCondition::IsPropertyVisible(const FProperty& P
 	return true;
 }
 #pragma endregion
-
 
 #pragma region Gameplay Tag Categories
 UBPE_MetadataCollection_GameplayTagCategories::UBPE_MetadataCollection_GameplayTagCategories()
@@ -499,7 +501,6 @@ TSharedPtr<SWidget> UBPE_MetadataCollection_ClassPicker::CreateValueWidgetForPro
 }
 #pragma endregion
 
-
 #pragma region Array
 bool UBPE_MetadataCollection_Array::IsRelevantForProperty(const FProperty& InProperty) const
 {
@@ -549,10 +550,153 @@ bool UBPE_MetadataCollection_Numbers::IsPropertyVisible(const FProperty& Propert
 	if (Property.GetFName() == ArrayClampName || Property.GetFName() == MultipleName)
 	{
 		const FNumericProperty* AsNumeric = CastField<FNumericProperty>(CurrentWrapper.GetProperty());
-		check(AsNumeric);
-		return AsNumeric->IsInteger();
+		return AsNumeric && AsNumeric->IsInteger();
 	}
 	
 	return true;
+}
+#pragma endregion
+
+#pragma region AllowPreserveRatio
+bool UBPE_MetadataCollection_AllowPreserveRatio::IsRelevantForContainedProperty(const FProperty& InProperty) const
+{
+	if (const FStructProperty* AsStructProperty = CastField<FStructProperty>(&InProperty))
+	{
+		const UStruct* Struct = AsStructProperty->Struct;
+		return
+		(
+			Struct == TBaseStructure<FVector>::Get() ||
+			Struct == TBaseStructure<FVector2D>::Get() ||
+			Struct == TBaseStructure<FVector4>::Get() ||
+			Struct == TBaseStructure<FRotator>::Get()
+			// Int vectors are broken in 5.1.1. It applies properly when increasing values, but not when decreasing.
+			//Struct == TBaseStructure<FIntPoint>::Get() ||
+			//Struct == TBaseStructure<FIntVector>::Get() ||
+			//Struct == TBaseStructure<FIntVector4>::Get()
+		);
+	}
+	return false;
+}
+#pragma endregion
+
+#pragma region Assets
+bool UBPE_MetadataCollection_Assets::IsRelevantForContainedProperty(const FProperty& InProperty) const
+{
+	return (InProperty.IsA<FObjectPropertyBase>() || InProperty.IsA<FInterfaceProperty>()) && !(InProperty.IsA<FClassProperty>() || InProperty.IsA<FSoftClassProperty>());
+}
+
+TOptional<FString> UBPE_MetadataCollection_Assets::ExportValueForProperty(FProperty& Property) const
+{
+	const auto SetActualMetadata = [this](FName InMetadataName, TArray<FBPE_AssetDataTagKeyValue> InArray)
+	{
+		InArray.RemoveAll([](const FBPE_AssetDataTagKeyValue& InTag) { return InTag.Key.IsEmpty(); });
+		
+		if (InArray.IsEmpty())
+		{
+			CurrentWrapper.RemoveMetadata(InMetadataName);
+		}
+		else
+		{
+			const FString Result = FString::JoinBy(InArray, TEXT(","), [](const FBPE_AssetDataTagKeyValue& InTag)
+			{
+				return InTag.Value.IsEmpty() ? InTag.Key : FString::Printf(TEXT("%s=%s"), *InTag.Key, *InTag.Value);
+			});
+		
+			CurrentWrapper.SetMetadata(InMetadataName, Result);
+		}
+	};
+	
+	if (Property.GetFName() == GET_MEMBER_NAME_CHECKED(ThisClass, RequiredAssetDataTags_Internal))
+	{
+		static const FName RequiredAssetDataTags("RequiredAssetDataTags");
+		SetActualMetadata(RequiredAssetDataTags, RequiredAssetDataTags_Internal);
+	}
+	else if (Property.GetFName() == GET_MEMBER_NAME_CHECKED(ThisClass, DisallowedAssetDataTags_Internal))
+	{
+		static const FName DisallowedAssetDataTags("DisallowedAssetDataTags");
+		SetActualMetadata(DisallowedAssetDataTags, DisallowedAssetDataTags_Internal);
+	}
+	else if (Property.GetFName() == GET_MEMBER_NAME_CHECKED(ThisClass, AllowedClasses))
+	{
+		const FString Result = FString::JoinBy(AllowedClasses, TEXT(","), [](const TSoftClassPtr<UObject>& Type) { return Type ? Type.ToString() : TEXT("None"); });
+		return AllowedClasses.IsEmpty() ? NullOpt : TOptional(Result);
+	}
+	else if (Property.GetFName() == GET_MEMBER_NAME_CHECKED(ThisClass, DisallowedClasses))
+	{
+		const FString Result = FString::JoinBy(DisallowedClasses, TEXT(","), [](const TSoftClassPtr<UObject>& Type) { return Type ? Type.ToString() : TEXT("None"); });
+		return DisallowedClasses.IsEmpty() ? NullOpt : TOptional(Result);
+	}
+
+	return Super::ExportValueForProperty(Property);
+}
+
+void UBPE_MetadataCollection_Assets::ImportValueForProperty(const FProperty& Property, const FString& Value)
+{
+	if (Property.GetFName() == GET_MEMBER_NAME_CHECKED(ThisClass, AllowedClasses) && !Value.IsEmpty())
+	{
+		TArray<FString> TypesAsString;
+		Value.ParseIntoArray(TypesAsString, TEXT(","));
+
+		AllowedClasses.Empty(TypesAsString.Num());
+		Algo::Transform(TypesAsString, AllowedClasses, [](const FString& TypeAsString){ return TSoftClassPtr(FSoftClassPath(TypeAsString)); });
+	}
+	else if (Property.GetFName() == GET_MEMBER_NAME_CHECKED(ThisClass, DisallowedClasses) && !Value.IsEmpty())
+	{
+		TArray<FString> TypesAsString;
+		Value.ParseIntoArray(TypesAsString, TEXT(","));
+
+		DisallowedClasses.Empty(TypesAsString.Num());
+		Algo::Transform(TypesAsString, DisallowedClasses, [](const FString& TypeAsString){ return TSoftClassPtr(FSoftClassPath(TypeAsString)); });
+	}
+	else
+	{
+		Super::ImportValueForProperty(Property, Value);
+	}
+}
+#pragma endregion
+
+#pragma region Row Type
+UBPE_MetadataCollection_RowType::UBPE_MetadataCollection_RowType()
+{
+	Structs.Add(TBaseStructure<FDataTableRowHandle>::Get());
+}
+
+TArray<FString> UBPE_MetadataCollection_RowType::GetPossibleRowTypes()
+{
+	TArray<FAssetData> Assets;
+	FDataTableEditorUtils::GetPossibleStructAssetData(Assets);
+	
+	TArray<FString> Rows;
+	Rows.Add("None");
+	for (const FAssetData& Asset : Assets)
+	{
+		Rows.Add(Asset.GetSoftObjectPath().GetAssetPathString());
+	}
+
+	return Rows;
+}
+
+TOptional<FString> UBPE_MetadataCollection_RowType::ExportValueForProperty(FProperty& Property) const
+{
+	if (Property.GetFName() == GET_MEMBER_NAME_CHECKED(ThisClass, RowType))
+	{
+		return (RowType.IsEmpty() || RowType == TEXT("None")) ? NullOpt : TOptional(RowType);
+	}
+	
+	return Super::ExportValueForProperty(Property);
+}
+#pragma endregion 
+
+#pragma region Text
+bool UBPE_MetadataCollection_Text::IsRelevantForContainedProperty(const FProperty& InProperty) const
+{
+	return InProperty.IsA<FNameProperty>() || InProperty.IsA<FStrProperty>() || InProperty.IsA<FTextProperty>();
+}
+#pragma endregion
+
+#pragma region Map
+bool UBPE_MetadataCollection_Map::IsRelevantForProperty(const FProperty& InProperty) const
+{
+	return InProperty.IsA<FMapProperty>();
 }
 #pragma endregion
