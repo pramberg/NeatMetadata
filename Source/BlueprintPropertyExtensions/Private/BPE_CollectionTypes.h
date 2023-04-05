@@ -554,7 +554,7 @@ protected:
 
 
 
-/** Properties related to properties that are edited using a text box. */
+/** Metadata related to properties that are edited using a text box. */
 UCLASS(meta=(DisplayName = "Text", Group = "Text"))
 class UBPE_MetadataCollection_Text : public UBPE_MetadataCollection
 {
