@@ -51,9 +51,15 @@ void FNeatMetadataDetailCustomization::CustomizeDetails(IDetailLayoutBuilder& De
 		UPropertyWrapper* PropertyWrapper = Cast<UPropertyWrapper>(ObjectsBeingCustomized[0].Get());
 		FProperty* PropertyBeingCustomized = PropertyWrapper ? PropertyWrapper->GetProperty() : nullptr;
 		if (!PropertyBeingCustomized)
+		{
 			return;
+		}
 
-		FNeatMetadataWrapper MetaWrapper {PropertyBeingCustomized, Blueprint};
+		FNeatMetadataWrapper MetaWrapper { PropertyBeingCustomized, Blueprint };
+		if (!MetaWrapper.IsValid())
+		{
+			return;
+		}
 		
 		DetailLayout.SortCategories([](const TMap<FName, IDetailCategoryBuilder*>& InAllCategoryMap)
 		{

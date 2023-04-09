@@ -7,7 +7,6 @@ FNeatMetadataWrapper::FNeatMetadataWrapper(TWeakFieldPtr<FProperty> InProperty, 
 	Blueprint(InBlueprint),
 	VariableDesc(Blueprint->NewVariables.FindByPredicate([this](const FBPVariableDescription& InDesc) { return InDesc.VarName == Property->GetFName(); }))
 {
-	check(IsValid());
 }
 
 void FNeatMetadataWrapper::SetMetadata(FName Key, const FString& Value) const
