@@ -21,6 +21,10 @@ public:
 	
 	using FForEachCollectionSignature = void(UBPE_MetadataCollection&);
 	void ForEachCollection(TFunctionRef<FForEachCollectionSignature> Functor) const;
+
+	// Tooltips for groups of metadata.
+	UPROPERTY(Config, EditDefaultsOnly, Category = "Blueprint Property Extensions", AdvancedDisplay, meta = (MultiLine = "true"))
+	TMap<FName, FText> GroupTooltips;
 	
 protected:
 	void RebuildMetadataCollections();

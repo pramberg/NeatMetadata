@@ -96,19 +96,25 @@ void BPE_VariableDetailCustomization::CustomizeDetails(IDetailLayoutBuilder& Det
 				{
 					const FText GroupDisplayName = GroupPtr ? FText::FromString(*GroupPtr) : CollectionClass.GetDisplayNameText();
 					Group = &MetadataCategory.AddGroup(GroupName, GroupDisplayName);
+
+					FText Tooltip = GroupPtr ? FText() : CollectionClass.GetToolTipText();
+					if (GroupPtr)
+					{
+						if (const FText* FoundTooltip = GetDefault<UBPE_Settings>()->GroupTooltips.Find(GroupName))
+						{
+							Tooltip = *FoundTooltip;
+						}
+					}
 					
-				   // Customize the header to allow tooltips on the group itself.
-				   Group->HeaderRow()
-				   [
-					   SNew(SBox)
-					   .ToolTipText(GroupPtr ? FText() : CollectionClass.GetToolTipText())
-					   .VAlign(VAlign_Center)
-					   [
-						   SNew(STextBlock)
-						   .Font(DetailLayout.GetDetailFont())
-						   .Text(GroupDisplayName)
-					   ]
-				   ];
+					// Customize the header to allow tooltips on the group itself.
+					Group->HeaderRow()
+					.NameContent()
+					[
+						SNew(STextBlock)
+						.ToolTipText(Tooltip)
+						.Font(DetailLayout.GetDetailFont())
+						.Text(GroupDisplayName)
+					];
 
 					GroupNameToGroup.Add(GroupName, Group);
 				}
@@ -141,6 +147,40 @@ void BPE_VariableDetailCustomization::CustomizeDetails(IDetailLayoutBuilder& Det
 			return;
 
 		IDetailGroup& Group = MetadataCategory.AddGroup("All Metadata", LOCTEXT("All Metadata", "All Metadata"));
+		Group.HeaderRow()
+		.NameContent()
+		[
+			SNew(STextBlock)
+			.ToolTipText(LOCTEXT("All Metadata Tooltip", "Displays all metadata on this property and provides some actions that can be taken on them."))
+			.Font(DetailLayout.GetDetailFont())
+			.Text(LOCTEXT("All Metadata", "All Metadata"))
+		]
+		.ExtensionContent()
+		[
+			SNew(SButton)
+			.ToolTipText(LOCTEXT("RemoveAllMetadataTooltip", "Remove all metadata."))
+			.ButtonStyle(FAppStyle::Get(), "SimpleButton")
+			.OnClicked_Lambda([MetaWrapper]()
+			{
+				const FText Desc = FText::Format(
+					INVTEXT("Removing all metadata from property [{0}]"),
+					MetaWrapper.GetProperty()->GetDisplayNameText()
+				);
+				FScopedTransaction Transaction(Desc);
+				
+				TArray<FName> MetadataNames;
+				MetaWrapper.GetProperty()->GetMetaDataMap()->GenerateKeyArray(MetadataNames);
+				for (const FName& Name : MetadataNames)
+				{
+					MetaWrapper.RemoveMetadata(Name);
+				}
+				return FReply::Handled();
+			})
+			[
+				SNew(SImage)
+				.Image(FAppStyle::GetBrush(TEXT("Icons.X")))
+			]
+		];
 
 		for (auto& [Key, Value] : *PropertyBeingCustomized->GetMetaDataMap())
 		{
@@ -160,6 +200,13 @@ void BPE_VariableDetailCustomization::CustomizeDetails(IDetailLayoutBuilder& Det
 					(
 						[Key, MetaWrapper](const FText& Text, ETextCommit::Type)
 						{
+							const FText Desc = FText::Format(
+								INVTEXT("Setting metadata on property [{0}] to [{1}: {2}]"),
+								MetaWrapper.GetProperty()->GetDisplayNameText(),
+								FText::FromName(Key),
+								Text
+							);
+							const FScopedTransaction Transaction(Desc);
 							MetaWrapper.SetMetadata(Key, Text.ToString());
 						}
 					)
@@ -171,6 +218,13 @@ void BPE_VariableDetailCustomization::CustomizeDetails(IDetailLayoutBuilder& Det
 					.ButtonStyle(FAppStyle::Get(), "SimpleButton")
 					.OnClicked_Lambda([Key, MetaWrapper]()
 					{
+						const FText Desc = FText::Format(
+							INVTEXT("Removing metadata with key [{0}] from property [{1}]"),
+							FText::FromName(Key),
+							MetaWrapper.GetProperty()->GetDisplayNameText()
+						);
+						const FScopedTransaction Transaction(Desc);
+						
 						MetaWrapper.RemoveMetadata(Key);
 						return FReply::Handled();
 					})

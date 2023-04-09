@@ -7,6 +7,16 @@
 UBPE_Settings::UBPE_Settings()
 {
 	CategoryName = "Plugins";
+
+#define LOCTEXT_NAMESPACE "Blueprint Property Extensions"
+	GroupTooltips = {
+		{ "General", LOCTEXT("GeneralTooltip", "Common metadata.") },
+		{ "Array", LOCTEXT("ArrayTooltip", "Metadata related to arrays.") },
+		{ "Map", LOCTEXT("MapTooltip", "Metadata related to maps.") },
+		{ "Text", LOCTEXT("TextTooltip", "Metadata related to properties that are edited using a text box.") },
+		{ "Paths", LOCTEXT("PathsTooltip", "Metadata related to directory paths and file paths.") },
+	};
+#undef LOCTEXT_NAMESPACE
 }
 
 void UBPE_Settings::ForEachCollection(TFunctionRef<FForEachCollectionSignature> Functor) const
@@ -58,6 +68,19 @@ void UBPE_Settings::RebuildMetadataCollections()
 			}
 		}
 	}
+
+	// Sort groups. Not sure if this is the best sort order, or if we should sort them differently.
+	// General should maybe always be on top, for example?
+	auto GetGroupName = [](const UBPE_MetadataCollection& InCollection)
+	{
+		const FString* GroupPtr = InCollection.GetClass()->FindMetaData(TEXT("Group"));
+		return GroupPtr ? *GroupPtr : InCollection.GetClass()->GetName();
+	};
+	
+	MetadataCollectionInstances.Sort([&](const UBPE_MetadataCollection& InA, const UBPE_MetadataCollection& InB)
+	{
+		return GetGroupName(InA) < GetGroupName(InB);
+	});
 }
 
 void UBPE_Settings::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
