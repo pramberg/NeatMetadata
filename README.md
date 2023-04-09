@@ -1,4 +1,4 @@
-# Neat Metadata
+# <img src="Resources/Icon128.png" style="height:1.0em;" align="center"/> Neat Metadata
 Editor extension to allow various metadata to be used in Blueprints that is otherwise only available in C++.
 
 ## Supported Metadata
