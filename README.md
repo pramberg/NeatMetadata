@@ -1,5 +1,5 @@
 # Blueprint Property Extensions
-Extension to blueprint properties to allow various metadata to be used that is otherwise only available in C++.
+Editor extension to allow various metadata to be used in Blueprints that is otherwise only available in C++.
 
 ## Supported Metadata
 ### Edit Conditions
