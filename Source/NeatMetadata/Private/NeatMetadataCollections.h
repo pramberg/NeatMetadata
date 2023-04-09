@@ -3,10 +3,10 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "BPE_MetadataCollection.h"
+#include "NeatMetadataCollection.h"
 #include "GameplayTagContainer.h"
 #include "Math/UnitConversion.h"
-#include "BPE_CollectionTypes.generated.h"
+#include "NeatMetadataCollections.generated.h"
 
 /**
  * Controls what "Categories", or root gameplay tags can be selected on a GameplayTag
@@ -15,12 +15,12 @@
  * @see FGameplayTag, FGameplayTagContainer, UGameplayTagsManager::StaticGetCategoriesMetaFromPropertyHandle
  */
 UCLASS(meta=(DisplayName = "Gameplay Tag Categories"))
-class UBPE_MetadataCollection_GameplayTagCategories : public UBPE_MetadataCollectionStruct
+class UNeatMetadataCollection_GameplayTagCategories : public UNeatMetadataCollectionStruct
 {
 	GENERATED_BODY()
 
 public:
-	UBPE_MetadataCollection_GameplayTagCategories();
+	UNeatMetadataCollection_GameplayTagCategories();
 
 	// One or more root tags that are selectable in the GameplayTag widget.
 	UPROPERTY(EditAnywhere, Category = "Gameplay Tag Categories")
@@ -38,7 +38,7 @@ protected:
  * properties that cannot be edited.
  */
 UCLASS(meta=(DisplayName = "Edit Condition"))
-class UBPE_MetadataCollection_EditCondition : public UBPE_MetadataCollection
+class UNeatMetadataCollection_EditCondition : public UNeatMetadataCollection
 {
 	GENERATED_BODY()
 
@@ -83,7 +83,7 @@ protected:
  * understand the use of the property.
  */
 UCLASS(meta=(DisplayName = "Units"))
-class UBPE_MetadataCollection_Units : public UBPE_MetadataCollectionStruct
+class UNeatMetadataCollection_Units : public UNeatMetadataCollectionStruct
 {
 	GENERATED_BODY()
 
@@ -113,12 +113,12 @@ protected:
 
 /** Allows you to specify the name of the axes on runtime curve properties. */
 UCLASS(meta=(DisplayName = "Curves"))
-class UBPE_MetadataCollection_Curves : public UBPE_MetadataCollectionStruct
+class UNeatMetadataCollection_Curves : public UNeatMetadataCollectionStruct
 {
 	GENERATED_BODY()
 
 public:
-	UBPE_MetadataCollection_Curves();
+	UNeatMetadataCollection_Curves();
 
 	// The name of the X-axis of the curve.
 	UPROPERTY(EditAnywhere, Category = "Curves")
@@ -139,7 +139,7 @@ public:
  * @see UAssetManager::InitializeAssetBundlesFromMetadata
  */
 UCLASS(meta=(DisplayName = "Asset Bundles"))
-class UBPE_MetadataCollection_AssetBundles : public UBPE_MetadataCollection
+class UNeatMetadataCollection_AssetBundles : public UNeatMetadataCollection
 {
 	GENERATED_BODY()
 
@@ -158,12 +158,12 @@ protected:
 
 /** Metadata related to color properties. Currently only allows you to hide the alpha channel. */
 UCLASS(meta=(DisplayName = "Color"))
-class UBPE_MetadataCollection_Color : public UBPE_MetadataCollectionStruct
+class UNeatMetadataCollection_Color : public UNeatMetadataCollectionStruct
 {
 	GENERATED_BODY()
 
 public:
-	UBPE_MetadataCollection_Color();
+	UNeatMetadataCollection_Color();
 
 	// Whether to hide the alpha channel from the color picker.
 	UPROPERTY(EditAnywhere, Category = "Color")
@@ -174,7 +174,7 @@ public:
 
 /** Controls the format of the header row on array elements. */
 UCLASS(meta=(DisplayName = "Title Property", Group = "Array"))
-class UBPE_MetadataCollection_TitleProperty : public UBPE_MetadataCollection
+class UNeatMetadataCollection_TitleProperty : public UNeatMetadataCollection
 {
 	GENERATED_BODY()
 
@@ -194,7 +194,7 @@ protected:
 
 /** Exposes the possibility to specify a list of strings as an option to String or Name variables. */
 UCLASS(meta=(DisplayName = "Get Options", Group = "Text"))
-class UBPE_MetadataCollection_GetOptions : public UBPE_MetadataCollectionStruct
+class UNeatMetadataCollection_GetOptions : public UNeatMetadataCollectionStruct
 {
 	GENERATED_BODY()
 
@@ -232,12 +232,12 @@ private:
 
 /** Exposes metadata specific to the FDirectoryPath variable type. Can be used to customize what type of interface is used, and what type of path to return. */
 UCLASS(meta=(DisplayName = "Directory Path", Group = "Paths"))
-class UBPE_MetadataCollection_DirectoryPath : public UBPE_MetadataCollectionStruct
+class UNeatMetadataCollection_DirectoryPath : public UNeatMetadataCollectionStruct
 {
 	GENERATED_BODY()
 
 public:
-	UBPE_MetadataCollection_DirectoryPath();
+	UNeatMetadataCollection_DirectoryPath();
 
 	// Should the path be relative to the engine directory. By default the path is absolute.
 	UPROPERTY(EditAnywhere, Category = "Directory Path", meta = (EditCondition = "!ContentDir && !RelativeToGameContentDir", EditConditionHides))
@@ -255,7 +255,7 @@ public:
 
 
 USTRUCT()
-struct FBPE_FilePathFilter
+struct FNeatFilePathFilter
 {
 	GENERATED_BODY()
 
@@ -270,12 +270,12 @@ struct FBPE_FilePathFilter
 
 /** Exposes metadata specific to the FFilePath variable type. Can be used to customize what files can be selected, and what type of path to return. */
 UCLASS(meta=(DisplayName = "File Path", Group = "Paths"))
-class UBPE_MetadataCollection_FilePath : public UBPE_MetadataCollectionStruct
+class UNeatMetadataCollection_FilePath : public UNeatMetadataCollectionStruct
 {
 	GENERATED_BODY()
 
 public:
-	UBPE_MetadataCollection_FilePath();
+	UNeatMetadataCollection_FilePath();
 
 	// Should the path be a LongPackageName, i.e. "/Game/Path/To/File"? Otherwise the path will be relative to engine directory.
 	UPROPERTY(EditAnywhere, Category = "File Path", meta = (EditCondition = "!RelativeToGameDir", EditConditionHides))
@@ -287,7 +287,7 @@ public:
 
 	// Describes what file types should show up in the file picker.
 	UPROPERTY(EditAnywhere, DisplayName = "File Path Filter", Category = "File Path", meta = (TitleProperty = "{Description} (*.{Extension})"))
-	TArray<FBPE_FilePathFilter> FilePathFilter_Internal;
+	TArray<FNeatFilePathFilter> FilePathFilter_Internal;
 
 protected:
 	virtual TOptional<FString> ExportValueForProperty(FProperty& Property) const override;
@@ -298,12 +298,12 @@ protected:
 
 /** Metadata specific to primary asset ids. */
 UCLASS(meta=(DisplayName = "Primary Asset Id", Group = "General"))
-class UBPE_MetadataCollection_PrimaryAssetId : public UBPE_MetadataCollectionStruct
+class UNeatMetadataCollection_PrimaryAssetId : public UNeatMetadataCollectionStruct
 {
 	GENERATED_BODY()
 
 public:
-	UBPE_MetadataCollection_PrimaryAssetId();
+	UNeatMetadataCollection_PrimaryAssetId();
 
 	// Determines what PrimaryAssetTypes are allowed to be selected by this property.
 	UPROPERTY(EditAnywhere, Category = "Primary Asset Id")
@@ -318,7 +318,7 @@ protected:
 
 /** Whether to remove the parent scope around the struct property. */
 UCLASS(meta=(DisplayName = "Show Only Inner Properties", Group = "General"))
-class UBPE_MetadataCollection_ShowOnlyInnerProperties : public UBPE_MetadataCollection
+class UNeatMetadataCollection_ShowOnlyInnerProperties : public UNeatMetadataCollection
 {
 	GENERATED_BODY()
 
@@ -335,7 +335,7 @@ protected:
 
 /** Options for class and soft class properties. Allows you to narrow down what classes are allowed to be selected. */
 UCLASS(meta=(DisplayName = "Class Picker"))
-class UBPE_MetadataCollection_ClassPicker : public UBPE_MetadataCollection
+class UNeatMetadataCollection_ClassPicker : public UNeatMetadataCollection
 {
 	GENERATED_BODY()
 
@@ -381,7 +381,7 @@ protected:
 
 /** Array-specific metadata. */
 UCLASS(meta=(DisplayName = "Array", Group = "Array"))
-class UBPE_MetadataCollection_Array : public UBPE_MetadataCollection
+class UNeatMetadataCollection_Array : public UNeatMetadataCollection
 {
 	GENERATED_BODY()
 
@@ -402,7 +402,7 @@ protected:
 
 /** Small extensions to numeric properties. */
 UCLASS(meta=(DisplayName = "Numbers"))
-class UBPE_MetadataCollection_Numbers : public UBPE_MetadataCollection
+class UNeatMetadataCollection_Numbers : public UNeatMetadataCollection
 {
 	GENERATED_BODY()
 
@@ -447,7 +447,7 @@ protected:
 
 /** Removes the "Reset To Default" button from this property. */
 UCLASS(meta=(DisplayName = "No Reset To Default", Group = "General"))
-class UBPE_MetadataCollection_NoResetToDefault : public UBPE_MetadataCollection
+class UNeatMetadataCollection_NoResetToDefault : public UNeatMetadataCollection
 {
 	GENERATED_BODY()
 
@@ -461,7 +461,7 @@ public:
 
 /** Enables the possibility to show the lock that preserves aspect ratio on multi-dimensional properties. */
 UCLASS(meta=(DisplayName = "Allow Preserve Ratio", Group = "General"))
-class UBPE_MetadataCollection_AllowPreserveRatio : public UBPE_MetadataCollection
+class UNeatMetadataCollection_AllowPreserveRatio : public UNeatMetadataCollection
 {
 	GENERATED_BODY()
 
@@ -477,7 +477,7 @@ protected:
 
 
 USTRUCT()
-struct FBPE_AssetDataTagKeyValue
+struct FNeatAssetDataTagKeyValue
 {
 	GENERATED_BODY()
 
@@ -490,7 +490,7 @@ struct FBPE_AssetDataTagKeyValue
 
 /** Metadata that allows you to control what assets are displayed in an asset property. */
 UCLASS(meta=(DisplayName = "Assets"))
-class UBPE_MetadataCollection_Assets : public UBPE_MetadataCollection
+class UNeatMetadataCollection_Assets : public UNeatMetadataCollection
 {
 	GENERATED_BODY()
 
@@ -498,11 +498,11 @@ public:
 	// Asset registry metadata tags that are required to exist in order to show the asset. This can be very useful on vast amount of properties.
 	// DataTables are an example, where you can say: Key = "RowStructure" and Value = "/Path/To/Struct" to only show DataTables of the correct type.
 	UPROPERTY(EditAnywhere, DisplayName = "Required Asset Data Tags", Category = "Assets")
-	TArray<FBPE_AssetDataTagKeyValue> RequiredAssetDataTags_Internal;
+	TArray<FNeatAssetDataTagKeyValue> RequiredAssetDataTags_Internal;
 
 	// The opposite of RequiredAssetDataTags. Asset registry metadata tags that are NOT allowed to be present on the asset.
 	UPROPERTY(EditAnywhere, DisplayName = "Disallowed Asset Data Tags", Category = "Assets")
-	TArray<FBPE_AssetDataTagKeyValue> DisallowedAssetDataTags_Internal;
+	TArray<FNeatAssetDataTagKeyValue> DisallowedAssetDataTags_Internal;
 	
 	// Whether to force engine content to be visible in the editor regardless of the user's current settings.
 	UPROPERTY(EditAnywhere, Category = "Assets")
@@ -535,12 +535,12 @@ protected:
 
 /** Exposes the RowType property on DataTableRowHandles. It allows the user to specify a specific struct that a data table must use in order to be displayed. */
 UCLASS(meta=(DisplayName = "Row Type", Group = "General"))
-class UBPE_MetadataCollection_RowType : public UBPE_MetadataCollectionStruct
+class UNeatMetadataCollection_RowType : public UNeatMetadataCollectionStruct
 {
 	GENERATED_BODY()
 
 public:
-	UBPE_MetadataCollection_RowType();
+	UNeatMetadataCollection_RowType();
 	
 	// The type of struct that can be specified for this data table.
 	UPROPERTY(EditAnywhere, Category = "Row Type", meta = (GetOptions="GetPossibleRowTypes"))
@@ -556,7 +556,7 @@ protected:
 
 /** Metadata related to properties that are edited using a text box. */
 UCLASS(meta=(DisplayName = "Text", Group = "Text"))
-class UBPE_MetadataCollection_Text : public UBPE_MetadataCollection
+class UNeatMetadataCollection_Text : public UNeatMetadataCollection
 {
 	GENERATED_BODY()
 
@@ -578,7 +578,7 @@ protected:
 
 /** Map-specific properties. */
 UCLASS(meta=(DisplayName = "Map", Group = "Map"))
-class UBPE_MetadataCollection_Map : public UBPE_MetadataCollection
+class UNeatMetadataCollection_Map : public UNeatMetadataCollection
 {
 	GENERATED_BODY()
 

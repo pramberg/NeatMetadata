@@ -9,9 +9,9 @@ class IPropertyHandle;
 class SComboButton;
 
 // Widget that displays all available interfaces.
-class SBPE_InterfaceSelector : public SCompoundWidget
+class SNeatInterfaceSelector : public SCompoundWidget
 {
-	SLATE_BEGIN_ARGS(SBPE_InterfaceSelector) {}
+	SLATE_BEGIN_ARGS(SNeatInterfaceSelector) {}
 	SLATE_END_ARGS()
 
 	void Construct(const FArguments&, TSharedRef<IPropertyHandle> InPropertyHandle);

@@ -1,7 +1,7 @@
 ﻿// Copyright Viktor Pramberg. All Rights Reserved.
 
 
-#include "SBPE_InterfaceSelector.h"
+#include "SNeatInterfaceSelector.h"
 
 #include "ClassViewerFilter.h"
 #include "ClassViewerModule.h"
@@ -10,7 +10,7 @@
 namespace
 {
 	// Class filter that only shows interfaces.
-	class FBPE_InterfaceClassFilter : public IClassViewerFilter
+	class FNeatInterfaceClassFilter : public IClassViewerFilter
 	{
 	public:
 		virtual bool IsClassAllowed(const FClassViewerInitializationOptions& InInitOptions, const UClass* InClass, TSharedRef<FClassViewerFilterFuncs> InFilterFuncs) override
@@ -25,24 +25,24 @@ namespace
 	};
 }
 
-void SBPE_InterfaceSelector::Construct(const FArguments&, TSharedRef<IPropertyHandle> InPropertyHandle)
+void SNeatInterfaceSelector::Construct(const FArguments&, TSharedRef<IPropertyHandle> InPropertyHandle)
 {
 	PropertyHandle = InPropertyHandle;
 
 	ChildSlot
 	[
 		SAssignNew(ComboButton, SComboButton)
-		.OnGetMenuContent(this, &SBPE_InterfaceSelector::GetMenuContent)
+		.OnGetMenuContent(this, &SNeatInterfaceSelector::GetMenuContent)
 		.ButtonContent()
 		[
 			SNew(STextBlock)
-			.Text(this, &SBPE_InterfaceSelector::GetButtonText)
+			.Text(this, &SNeatInterfaceSelector::GetButtonText)
 			.Font(IDetailLayoutBuilder::GetDetailFont())
 		]
 	];
 }
 
-TSharedRef<SWidget> SBPE_InterfaceSelector::GetMenuContent()
+TSharedRef<SWidget> SNeatInterfaceSelector::GetMenuContent()
 {
 	FClassViewerModule& ClassViewerModule = FModuleManager::LoadModuleChecked<FClassViewerModule>("ClassViewer");
 	FClassViewerInitializationOptions Options;
@@ -51,7 +51,7 @@ TSharedRef<SWidget> SBPE_InterfaceSelector::GetMenuContent()
 	Options.bAllowViewOptions = false;
 	Options.NameTypeToDisplay = EClassViewerNameTypeToDisplay::DisplayName;
 	Options.PropertyHandle = PropertyHandle;
-	Options.ClassFilters.Add(MakeShared<FBPE_InterfaceClassFilter>());
+	Options.ClassFilters.Add(MakeShared<FNeatInterfaceClassFilter>());
 
 	return SNew(SBox)
 		.WidthOverride(280)
@@ -61,12 +61,12 @@ TSharedRef<SWidget> SBPE_InterfaceSelector::GetMenuContent()
 			.AutoHeight()
 			.MaxHeight(500)
 			[
-				ClassViewerModule.CreateClassViewer(Options, FOnClassPicked::CreateSP(this, &SBPE_InterfaceSelector::OnClassPicked))
+				ClassViewerModule.CreateClassViewer(Options, FOnClassPicked::CreateSP(this, &SNeatInterfaceSelector::OnClassPicked))
 			]
 		];
 }
 
-void SBPE_InterfaceSelector::OnClassPicked(UClass* InClass) const
+void SNeatInterfaceSelector::OnClassPicked(UClass* InClass) const
 {
 	if (GetClass() != InClass)
 	{
@@ -76,14 +76,14 @@ void SBPE_InterfaceSelector::OnClassPicked(UClass* InClass) const
 	ComboButton->SetIsOpen(false);
 }
 
-UClass* SBPE_InterfaceSelector::GetClass() const
+UClass* SNeatInterfaceSelector::GetClass() const
 {
 	UObject* Obj;
 	PropertyHandle->GetValue(Obj);
 	return Cast<UClass>(Obj);
 }
 
-FText SBPE_InterfaceSelector::GetButtonText() const
+FText SNeatInterfaceSelector::GetButtonText() const
 {
 	return GetClass() ? GetClass()->GetDisplayNameText() : INVTEXT("None");
 }

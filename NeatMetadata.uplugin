@@ -2,14 +2,14 @@
 	"FileVersion": 3,
 	"Version": 1,
 	"VersionName": "1.0",
-	"FriendlyName": "Blueprint Property Extensions",
-	"Description": "Extension to blueprint properties to allow various metadata to be used that is otherwise only available in C++.",
+	"FriendlyName": "Neat Metadata",
+	"Description": "Editor extension to allow various metadata to be used in Blueprints that is otherwise only available in C++.",
 	"Category": "Editor",
 	"CreatedBy": "Viktor Pramberg",
 	"CreatedByURL": "https://viktorpramberg.com",
-	"DocsURL": "https://github.com/pramberg/BlueprintPropertyExtensions/wiki",
+	"DocsURL": "https://github.com/pramberg/NeatMetadata/wiki",
 	"MarketplaceURL": "",
-	"SupportURL": "https://github.com/pramberg/BlueprintPropertyExtensions/issues",
+	"SupportURL": "https://github.com/pramberg/NeatMetadata/issues",
 	"EnabledByDefault": true,
 	"CanContainContent": true,
 	"IsBetaVersion": false,
@@ -17,7 +17,7 @@
 	"Installed": false,
 	"Modules": [
 		{
-			"Name": "BlueprintPropertyExtensions",
+			"Name": "NeatMetadata",
 			"Type": "Editor",
 			"LoadingPhase": "PostEngineInit"
 		}

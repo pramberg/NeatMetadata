@@ -1,8 +1,8 @@
 ﻿// Copyright Viktor Pramberg. All Rights Reserved.
-#include "BPE_MetadataWrapper.h"
+#include "NeatMetadataWrapper.h"
 #include "Kismet2/BlueprintEditorUtils.h"
 
-FBPE_MetadataWrapper::FBPE_MetadataWrapper(TWeakFieldPtr<FProperty> InProperty, TWeakObjectPtr<UBlueprint> InBlueprint) :
+FNeatMetadataWrapper::FNeatMetadataWrapper(TWeakFieldPtr<FProperty> InProperty, TWeakObjectPtr<UBlueprint> InBlueprint) :
 	Property(InProperty),
 	Blueprint(InBlueprint),
 	VariableDesc(Blueprint->NewVariables.FindByPredicate([this](const FBPVariableDescription& InDesc) { return InDesc.VarName == Property->GetFName(); }))
@@ -10,7 +10,7 @@ FBPE_MetadataWrapper::FBPE_MetadataWrapper(TWeakFieldPtr<FProperty> InProperty, 
 	check(IsValid());
 }
 
-void FBPE_MetadataWrapper::SetMetadata(FName Key, const FString& Value) const
+void FNeatMetadataWrapper::SetMetadata(FName Key, const FString& Value) const
 {
 	if (IsValid())
 	{
@@ -19,7 +19,7 @@ void FBPE_MetadataWrapper::SetMetadata(FName Key, const FString& Value) const
 	}
 }
 
-void FBPE_MetadataWrapper::RemoveMetadata(FName Key) const
+void FNeatMetadataWrapper::RemoveMetadata(FName Key) const
 {
 	if (IsValid())
 	{
@@ -28,27 +28,27 @@ void FBPE_MetadataWrapper::RemoveMetadata(FName Key) const
 	}
 }
 
-FString FBPE_MetadataWrapper::GetMetadata(FName Key) const
+FString FNeatMetadataWrapper::GetMetadata(FName Key) const
 {
 	return IsValid() && VariableDesc->HasMetaData(Key) ? VariableDesc->GetMetaData(Key) : FString();
 }
 
-bool FBPE_MetadataWrapper::HasMetadata(FName Key) const
+bool FNeatMetadataWrapper::HasMetadata(FName Key) const
 {
 	return IsValid() ? VariableDesc->HasMetaData(Key) : false;
 }
 
-bool FBPE_MetadataWrapper::IsValid() const
+bool FNeatMetadataWrapper::IsValid() const
 {
 	return Blueprint.IsValid() && Property.IsValid() && VariableDesc;
 }
 
-const FProperty* FBPE_MetadataWrapper::GetProperty() const
+const FProperty* FNeatMetadataWrapper::GetProperty() const
 {
 	return Property.Get();
 }
 
-UBlueprint* FBPE_MetadataWrapper::GetBlueprint() const
+UBlueprint* FNeatMetadataWrapper::GetBlueprint() const
 {
 	return Blueprint.Get();
 }

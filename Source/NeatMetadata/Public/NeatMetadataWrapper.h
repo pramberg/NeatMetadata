@@ -8,11 +8,11 @@
 /**
  * 
  */
-class BLUEPRINTPROPERTYEXTENSIONS_API FBPE_MetadataWrapper
+class NEATMETADATA_API FNeatMetadataWrapper
 {
 public:
-	FBPE_MetadataWrapper() = default;
-	FBPE_MetadataWrapper(TWeakFieldPtr<FProperty> InProperty, TWeakObjectPtr<UBlueprint> InBlueprint);
+	FNeatMetadataWrapper() = default;
+	FNeatMetadataWrapper(TWeakFieldPtr<FProperty> InProperty, TWeakObjectPtr<UBlueprint> InBlueprint);
 
 	void SetMetadata(FName Key, const FString& Value) const;
 	void RemoveMetadata(FName Key) const;

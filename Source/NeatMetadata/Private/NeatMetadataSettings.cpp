@@ -1,10 +1,10 @@
 // Copyright Viktor Pramberg. All Rights Reserved.
 
 
-#include "BPE_Settings.h"
-#include "BPE_CollectionTypes.h"
+#include "NeatMetadataSettings.h"
+#include "NeatMetadataCollection.h"
 
-UBPE_Settings::UBPE_Settings()
+UNeatMetadataSettings::UNeatMetadataSettings()
 {
 	CategoryName = "Plugins";
 
@@ -19,16 +19,16 @@ UBPE_Settings::UBPE_Settings()
 #undef LOCTEXT_NAMESPACE
 }
 
-void UBPE_Settings::ForEachCollection(TFunctionRef<FForEachCollectionSignature> Functor) const
+void UNeatMetadataSettings::ForEachCollection(TFunctionRef<FForEachCollectionSignature> Functor) const
 {
-	for (TObjectPtr<UBPE_MetadataCollection> Collection : MetadataCollectionInstances)
+	for (TObjectPtr<UNeatMetadataCollection> Collection : MetadataCollectionInstances)
 	{
 		check(Collection);
 		Functor(*Collection);
 	}
 }
 
-void UBPE_Settings::RebuildMetadataCollections()
+void UNeatMetadataSettings::RebuildMetadataCollections()
 {
 	MetadataCollectionInstances.Empty();
 	
@@ -37,7 +37,7 @@ void UBPE_Settings::RebuildMetadataCollections()
 		// TODO: Support blueprint classes too? Right now they are not guaranteed to be loaded, so we have to load them through the asset registry.
 		for (UClass* Class : TObjectRange<UClass>())
 		{
-			if (!Class->IsChildOf(UBPE_MetadataCollection::StaticClass()) || Class->HasAnyClassFlags(CLASS_Abstract | CLASS_Deprecated))
+			if (!Class->IsChildOf(UNeatMetadataCollection::StaticClass()) || Class->HasAnyClassFlags(CLASS_Abstract | CLASS_Deprecated))
 			{
 				continue;
 			}
@@ -47,14 +47,14 @@ void UBPE_Settings::RebuildMetadataCollections()
 				continue;
 			}
 
-			MetadataCollectionInstances.Add(NewObject<UBPE_MetadataCollection>(this, Class));
+			MetadataCollectionInstances.Add(NewObject<UNeatMetadataCollection>(this, Class));
 		}
 	}
 	else
 	{
 		MetadataCollectionInstances.Reserve(AllowedCollections.Num());
 
-		for (TSoftClassPtr<UBPE_MetadataCollection> SoftClass : AllowedCollections)
+		for (TSoftClassPtr<UNeatMetadataCollection> SoftClass : AllowedCollections)
 		{
 			if (SoftClass.IsNull())
 			{
@@ -64,26 +64,26 @@ void UBPE_Settings::RebuildMetadataCollections()
 			const UClass* LoadedClass = SoftClass.LoadSynchronous();
 			if (ensure(LoadedClass))
 			{
-				MetadataCollectionInstances.Add(NewObject<UBPE_MetadataCollection>(this, LoadedClass));
+				MetadataCollectionInstances.Add(NewObject<UNeatMetadataCollection>(this, LoadedClass));
 			}
 		}
 	}
 
 	// Sort groups. Not sure if this is the best sort order, or if we should sort them differently.
 	// General should maybe always be on top, for example?
-	auto GetGroupName = [](const UBPE_MetadataCollection& InCollection)
+	auto GetGroupName = [](const UNeatMetadataCollection& InCollection)
 	{
 		const FString* GroupPtr = InCollection.GetClass()->FindMetaData(TEXT("Group"));
 		return GroupPtr ? *GroupPtr : InCollection.GetClass()->GetName();
 	};
 	
-	MetadataCollectionInstances.Sort([&](const UBPE_MetadataCollection& InA, const UBPE_MetadataCollection& InB)
+	MetadataCollectionInstances.Sort([&](const UNeatMetadataCollection& InA, const UNeatMetadataCollection& InB)
 	{
 		return GetGroupName(InA) < GetGroupName(InB);
 	});
 }
 
-void UBPE_Settings::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
+void UNeatMetadataSettings::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
 {
 	Super::PostEditChangeProperty(PropertyChangedEvent);
 	
@@ -94,14 +94,14 @@ void UBPE_Settings::PostEditChangeProperty(FPropertyChangedEvent& PropertyChange
 	}
 }
 
-void UBPE_Settings::PostInitProperties()
+void UNeatMetadataSettings::PostInitProperties()
 {
 	Super::PostInitProperties();
 
 	RebuildMetadataCollections();
 }
 
-UBPE_UserSettings::UBPE_UserSettings()
+UNeatMetadataUserSettings::UNeatMetadataUserSettings()
 {
 	CategoryName = "Plugins";
 }

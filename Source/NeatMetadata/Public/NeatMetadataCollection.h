@@ -3,29 +3,29 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "BPE_MetadataWrapper.h"
-#include "BPE_MetadataCollection.generated.h"
+#include "NeatMetadataWrapper.h"
+#include "NeatMetadataCollection.generated.h"
 
 /**
  * Encapsulates a collection of metadata for some blueprint variable. UPROPERTIES in this class that are visible in
  * the editor (i.e. EditAnywhere) will show up in the details panel of all selected variables that matches its conditions.
  *
  * Instances of these objects are created and reused in order to display their properties.
- * @see UBPE_Settings.
+ * @see UNeatMetadataSettings.
  */
 UCLASS(Abstract, Blueprintable, BlueprintType)
-class BLUEPRINTPROPERTYEXTENSIONS_API UBPE_MetadataCollection : public UObject
+class NEATMETADATA_API UNeatMetadataCollection : public UObject
 {
 	GENERATED_BODY()
 
 public:
-	UBPE_MetadataCollection();
+	UNeatMetadataCollection();
 	
 	/**
 	 * @brief Sets this object up for display based on the provided metadata.
 	 * @param MetadataWrapper The metadata to apply to this object.
 	 */
-	void InitializeFromMetadata(const FBPE_MetadataWrapper& MetadataWrapper);
+	void InitializeFromMetadata(const FNeatMetadataWrapper& MetadataWrapper);
 	
 	using FForEachVisiblePropertySignature = void(const FProperty&);
 	/**
@@ -87,7 +87,7 @@ protected:
 	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
 
 protected:
-	FBPE_MetadataWrapper CurrentWrapper;
+	FNeatMetadataWrapper CurrentWrapper;
 };
 
 
@@ -95,7 +95,7 @@ protected:
  * A version of a metadata collection that is only relevant for struct properties with specified struct types.
  */
 UCLASS(Abstract)
-class BLUEPRINTPROPERTYEXTENSIONS_API UBPE_MetadataCollectionStruct : public UBPE_MetadataCollection
+class NEATMETADATA_API UNeatMetadataCollectionStruct : public UNeatMetadataCollection
 {
 	GENERATED_BODY()
 

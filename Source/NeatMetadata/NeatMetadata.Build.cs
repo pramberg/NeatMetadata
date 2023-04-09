@@ -2,9 +2,9 @@
 
 using UnrealBuildTool;
 
-public class BlueprintPropertyExtensions : ModuleRules
+public class NeatMetadata : ModuleRules
 {
-	public BlueprintPropertyExtensions(ReadOnlyTargetRules Target) : base(Target)
+	public NeatMetadata(ReadOnlyTargetRules Target) : base(Target)
 	{
 		PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
 		

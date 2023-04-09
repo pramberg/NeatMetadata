@@ -1,10 +1,10 @@
 ﻿// Copyright Viktor Pramberg. All Rights Reserved.
-#include "SBPE_FunctionSelector.h"
+#include "SNeatFunctionSelector.h"
 #include "Widgets/Input/SSearchBox.h"
 #include "SListViewSelectorDropdownMenu.h"
 #include "Styling/SlateIconFinder.h"
 
-enum class EBPE_FunctionSelectorItemType : uint8
+enum class ENeatFunctionSelectorItemType : uint8
 {
 	None,
 	Class,
@@ -13,23 +13,23 @@ enum class EBPE_FunctionSelectorItemType : uint8
 	AddNewFunction,
 };
 
-struct FBPE_FunctionSelectorItem
+struct FNeatFunctionSelectorItem
 {
-	explicit FBPE_FunctionSelectorItem(const UClass* InClass) :
+	explicit FNeatFunctionSelectorItem(const UClass* InClass) :
 		Object(InClass),
-		ItemType(EBPE_FunctionSelectorItemType::Class),
+		ItemType(ENeatFunctionSelectorItemType::Class),
 		ToolTip(InClass ? InClass->GetToolTipText() : FText())
 	{}
 	
-	explicit FBPE_FunctionSelectorItem(const UFunction* InFunction, const bool bIsMemberFunction) :
+	explicit FNeatFunctionSelectorItem(const UFunction* InFunction, const bool bIsMemberFunction) :
 		Object(InFunction),
-		ItemType(bIsMemberFunction ? EBPE_FunctionSelectorItemType::MemberFunction : EBPE_FunctionSelectorItemType::StaticFunction),
+		ItemType(bIsMemberFunction ? ENeatFunctionSelectorItemType::MemberFunction : ENeatFunctionSelectorItemType::StaticFunction),
 		ToolTip(InFunction ? InFunction->GetToolTipText() : FText()),
 		Value(bIsMemberFunction ? InFunction->GetName() : InFunction->GetPathName()),
 		Icon(FAppStyle::GetBrush(TEXT("Kismet.AllClasses.FunctionIcon")))
 	{}
 
-	explicit FBPE_FunctionSelectorItem(const FText InText, const FText InToolTip = FText(), EBPE_FunctionSelectorItemType InItemType = EBPE_FunctionSelectorItemType::None) :
+	explicit FNeatFunctionSelectorItem(const FText InText, const FText InToolTip = FText(), ENeatFunctionSelectorItemType InItemType = ENeatFunctionSelectorItemType::None) :
 		ItemType(InItemType),
 		DisplayName(InText),
 		ToolTip(InToolTip),
@@ -48,17 +48,17 @@ struct FBPE_FunctionSelectorItem
 
 protected:
 	TWeakObjectPtr<const UStruct> Object = nullptr;
-	EBPE_FunctionSelectorItemType ItemType = EBPE_FunctionSelectorItemType::None;
+	ENeatFunctionSelectorItemType ItemType = ENeatFunctionSelectorItemType::None;
 	FText DisplayName;
 	FText ToolTip;
 	FString Value;
 	const FSlateBrush* Icon = nullptr;
-	TArray<FBPE_FunctionSelectorItemPtr> Children;
+	TArray<FNeatFunctionSelectorItemPtr> Children;
 
-	friend class SBPE_FunctionSelector;
+	friend class SNeatFunctionSelector;
 };
 
-void SBPE_FunctionSelector::Construct(const FArguments& InArgs, TSharedRef<IPropertyHandle> InPropertyHandle)
+void SNeatFunctionSelector::Construct(const FArguments& InArgs, TSharedRef<IPropertyHandle> InPropertyHandle)
 {
 	PropertyHandle = InPropertyHandle;
 
@@ -69,15 +69,15 @@ void SBPE_FunctionSelector::Construct(const FArguments& InArgs, TSharedRef<IProp
 	ChildSlot
 	[
 		SAssignNew(ComboButton, SComboButton)
-		.OnGetMenuContent(this, &SBPE_FunctionSelector::OnGetMenuContent)
+		.OnGetMenuContent(this, &SNeatFunctionSelector::OnGetMenuContent)
 		.ButtonContent()
 		[
-			SNew(STextBlock).Text(this, &SBPE_FunctionSelector::GetText)
+			SNew(STextBlock).Text(this, &SNeatFunctionSelector::GetText)
 		]
 	];
 }
 
-FText SBPE_FunctionSelector::GetText() const
+FText SNeatFunctionSelector::GetText() const
 {
 	FString Value;
 	PropertyHandle->GetValue(Value);
@@ -88,7 +88,7 @@ FText SBPE_FunctionSelector::GetText() const
 	return FText::FromString(Value);
 }
 
-TSharedRef<SWidget> SBPE_FunctionSelector::OnGetMenuContent()
+TSharedRef<SWidget> SNeatFunctionSelector::OnGetMenuContent()
 {
 	RefreshFunctions();
 
@@ -99,16 +99,16 @@ TSharedRef<SWidget> SBPE_FunctionSelector::OnGetMenuContent()
 	TSharedPtr<SSearchBox> SearchBox;
 	SAssignNew(SearchBox, SSearchBox)
 	.HintText(INVTEXT("Search"))
-	.OnTextChanged(this, &SBPE_FunctionSelector::OnSearchTextChanged)
-	.OnTextCommitted(this, &SBPE_FunctionSelector::OnSearchTextCommitted);
+	.OnTextChanged(this, &SNeatFunctionSelector::OnSearchTextChanged)
+	.OnTextCommitted(this, &SNeatFunctionSelector::OnSearchTextCommitted);
 	
-	SAssignNew(TreeView, SBPE_FunctionSelectorTreeView)
+	SAssignNew(TreeView, SNeatFunctionSelectorTreeView)
 	.TreeItemsSource(&FilteredItems)
 	.SelectionMode(ESelectionMode::Single)
 	.ItemHeight(32)
-	.OnSelectionChanged(this, &SBPE_FunctionSelector::OnSelectionChanged)
-	.OnGetChildren_Lambda([this](FBPE_FunctionSelectorItemPtr InParent, TArray<FBPE_FunctionSelectorItemPtr>& OutChildren) { OutChildren = InParent->Children; })
-	.OnGenerateRow(this, &SBPE_FunctionSelector::OnGenerateRow);
+	.OnSelectionChanged(this, &SNeatFunctionSelector::OnSelectionChanged)
+	.OnGetChildren_Lambda([this](FNeatFunctionSelectorItemPtr InParent, TArray<FNeatFunctionSelectorItemPtr>& OutChildren) { OutChildren = InParent->Children; })
+	.OnGenerateRow(this, &SNeatFunctionSelector::OnGenerateRow);
 
 	ComboButton->SetMenuContentWidgetToFocus(SearchBox);
 	if (!FilteredItems.IsEmpty())
@@ -116,7 +116,7 @@ TSharedRef<SWidget> SBPE_FunctionSelector::OnGetMenuContent()
 		TreeView->SetItemExpansion(FilteredItems[1], true);
 	}
 	
-	return SNew(SListViewSelectorDropdownMenu<FBPE_FunctionSelectorItemPtr>, SearchBox, TreeView)
+	return SNew(SListViewSelectorDropdownMenu<FNeatFunctionSelectorItemPtr>, SearchBox, TreeView)
 		[
 			SNew(SVerticalBox)
 			+SVerticalBox::Slot()
@@ -139,7 +139,7 @@ TSharedRef<SWidget> SBPE_FunctionSelector::OnGetMenuContent()
 		];
 }
 
-void SBPE_FunctionSelector::OnSelectionChanged(FBPE_FunctionSelectorItemPtr InSelection, ESelectInfo::Type InSelectInfo) const
+void SNeatFunctionSelector::OnSelectionChanged(FNeatFunctionSelectorItemPtr InSelection, ESelectInfo::Type InSelectInfo) const
 {
 	if (!InSelection.IsValid())
 	{
@@ -162,7 +162,7 @@ void SBPE_FunctionSelector::OnSelectionChanged(FBPE_FunctionSelectorItemPtr InSe
 	}
 }
 
-void SBPE_FunctionSelector::OnSearchTextChanged(const FText& ChangedText)
+void SNeatFunctionSelector::OnSearchTextChanged(const FText& ChangedText)
 {
 	SearchText = ChangedText;
 
@@ -179,16 +179,16 @@ void SBPE_FunctionSelector::OnSearchTextChanged(const FText& ChangedText)
 	}
 	else
 	{
-		for (const FBPE_FunctionSelectorItemPtr& Item : Items)
+		for (const FNeatFunctionSelectorItemPtr& Item : Items)
 		{
-			FBPE_FunctionSelectorItemPtr FilteredItem = nullptr;
-			for (const FBPE_FunctionSelectorItemPtr& Child : Item->Children)
+			FNeatFunctionSelectorItemPtr FilteredItem = nullptr;
+			for (const FNeatFunctionSelectorItemPtr& Child : Item->Children)
 			{
 				if (Child->Object.IsValid() && Child->Object->GetName().Contains(SearchText.ToString()))
 				{
 					if (!FilteredItem)
 					{
-						FilteredItem = MakeShared<FBPE_FunctionSelectorItem>(*Item);
+						FilteredItem = MakeShared<FNeatFunctionSelectorItem>(*Item);
 						FilteredItem->Children.Reset();
 						FilteredItems.Add(FilteredItem);
 						TreeView->SetItemExpansion(FilteredItem, true);
@@ -202,7 +202,7 @@ void SBPE_FunctionSelector::OnSearchTextChanged(const FText& ChangedText)
 	TreeView->RequestTreeRefresh();
 }
 
-void SBPE_FunctionSelector::OnSearchTextCommitted(const FText& InText, ETextCommit::Type InCommitType)
+void SNeatFunctionSelector::OnSearchTextCommitted(const FText& InText, ETextCommit::Type InCommitType)
 {
 	if ((InCommitType == ETextCommit::Type::OnEnter) && FilteredItems.Num() > 0)
 	{
@@ -211,9 +211,9 @@ void SBPE_FunctionSelector::OnSearchTextCommitted(const FText& InText, ETextComm
 	}
 }
 
-void SBPE_FunctionSelector::SetCurrentItem(FBPE_FunctionSelectorItemPtr InItem) const
+void SNeatFunctionSelector::SetCurrentItem(FNeatFunctionSelectorItemPtr InItem) const
 {
-	if (InItem->ItemType == EBPE_FunctionSelectorItemType::AddNewFunction)
+	if (InItem->ItemType == ENeatFunctionSelectorItemType::AddNewFunction)
 	{
 		if (TOptional<FString> NewFunction = AddNewFunction.Execute())
 		{
@@ -228,7 +228,7 @@ void SBPE_FunctionSelector::SetCurrentItem(FBPE_FunctionSelectorItemPtr InItem) 
 	ComboButton->SetIsOpen(false);
 }
 
-TSharedRef<ITableRow> SBPE_FunctionSelector::OnGenerateRow(FBPE_FunctionSelectorItemPtr InItem, const TSharedRef<STableViewBase>& InParent) const
+TSharedRef<ITableRow> SNeatFunctionSelector::OnGenerateRow(FNeatFunctionSelectorItemPtr InItem, const TSharedRef<STableViewBase>& InParent) const
 {
 	return SNew(STableRow<TSharedPtr<FText>>, InParent)
 	[
@@ -256,19 +256,19 @@ TSharedRef<ITableRow> SBPE_FunctionSelector::OnGenerateRow(FBPE_FunctionSelector
 	];
 }
 
-void SBPE_FunctionSelector::RefreshFunctions()
+void SNeatFunctionSelector::RefreshFunctions()
 {
 	Items.Reset();
 
 	{
-		Items.Add(MakeShared<FBPE_FunctionSelectorItem>(INVTEXT("None")));
+		Items.Add(MakeShared<FNeatFunctionSelectorItem>(INVTEXT("None")));
 	}
 
 	const UClass* OwnerClass = MemberClass.Get(nullptr);
-	FBPE_FunctionSelectorItemPtr OwnerItem;
+	FNeatFunctionSelectorItemPtr OwnerItem;
 	if (OwnerClass)
 	{
-		OwnerItem = MakeShared<FBPE_FunctionSelectorItem>(OwnerClass);
+		OwnerItem = MakeShared<FNeatFunctionSelectorItem>(OwnerClass);
 		OwnerItem->SetDisplayName(FText::Format(INVTEXT("{0} (Self)"), OwnerClass->GetDisplayNameText()));
 		Items.Add(OwnerItem);
 	}
@@ -293,17 +293,17 @@ void SBPE_FunctionSelector::RefreshFunctions()
 			continue;
 		}
 
-		auto Item = MakeShared<FBPE_FunctionSelectorItem>(Function, bIsMemberFunction);
+		auto Item = MakeShared<FNeatFunctionSelectorItem>(Function, bIsMemberFunction);
 		if (bIsMemberFunction && OwnerItem)
 		{
 			OwnerItem->Children.Add(Item);
 		}
 		else
 		{
-			const FBPE_FunctionSelectorItemPtr* FoundOuter = Items.FindByPredicate([Function](const FBPE_FunctionSelectorItemPtr& Item) { return Item->Object == Function->GetOuterUClass(); });
+			const FNeatFunctionSelectorItemPtr* FoundOuter = Items.FindByPredicate([Function](const FNeatFunctionSelectorItemPtr& Item) { return Item->Object == Function->GetOuterUClass(); });
 			if (!FoundOuter)
 			{
-				FoundOuter = &Items.Add_GetRef(MakeShared<FBPE_FunctionSelectorItem>(Function->GetOuterUClass()));
+				FoundOuter = &Items.Add_GetRef(MakeShared<FNeatFunctionSelectorItem>(Function->GetOuterUClass()));
 			}
 
 			FoundOuter->Get()->Children.Add(Item);
@@ -314,7 +314,7 @@ void SBPE_FunctionSelector::RefreshFunctions()
 	{
 		static const FText AddFunctionName(INVTEXT("Add new function..."));
 		static const FText AddFunctionTooltip(INVTEXT("Adds a new function with the correct signature to be used with this property."));
-		const auto Item = MakeShared<FBPE_FunctionSelectorItem>(AddFunctionName, AddFunctionTooltip, EBPE_FunctionSelectorItemType::AddNewFunction);
+		const auto Item = MakeShared<FNeatFunctionSelectorItem>(AddFunctionName, AddFunctionTooltip, ENeatFunctionSelectorItemType::AddNewFunction);
 		Item->SetIcon(FAppStyle::GetBrush(TEXT("Icons.PlusCircle")));
 		OwnerItem->Children.Add(Item);
 	}

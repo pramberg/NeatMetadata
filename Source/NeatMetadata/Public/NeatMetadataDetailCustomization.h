@@ -10,11 +10,11 @@ class IBlueprintEditor;
 /**
  * 
  */
-class BPE_VariableDetailCustomization : public IDetailCustomization
+class FNeatMetadataDetailCustomization : public IDetailCustomization
 {
 public:
 	static TSharedPtr<IDetailCustomization> MakeInstance(TSharedPtr<IBlueprintEditor> InBlueprintEditor);
-	BPE_VariableDetailCustomization(UBlueprint* InBlueprint);
+	FNeatMetadataDetailCustomization(UBlueprint* InBlueprint);
 
 	virtual void CustomizeDetails(IDetailLayoutBuilder& DetailLayout) override;
 	

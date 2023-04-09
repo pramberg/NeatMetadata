@@ -1,17 +1,17 @@
 // Copyright Viktor Pramberg. All Rights Reserved.
-#include "BPE_MetadataCollection.h"
-#include "BPE_MetadataWrapper.h"
+#include "NeatMetadataCollection.h"
+#include "NeatMetadataWrapper.h"
 
-UBPE_MetadataCollection::UBPE_MetadataCollection()
+UNeatMetadataCollection::UNeatMetadataCollection()
 {
 }
 
-bool UBPE_MetadataCollection::IsRelevantForContainedProperty(const FProperty& InProperty) const
+bool UNeatMetadataCollection::IsRelevantForContainedProperty(const FProperty& InProperty) const
 {
 	return true;
 }
 
-void UBPE_MetadataCollection::InitializeFromMetadata(const FBPE_MetadataWrapper& MetadataWrapper)
+void UNeatMetadataCollection::InitializeFromMetadata(const FNeatMetadataWrapper& MetadataWrapper)
 {
 	CurrentWrapper = MetadataWrapper;
 
@@ -29,7 +29,7 @@ void UBPE_MetadataCollection::InitializeFromMetadata(const FBPE_MetadataWrapper&
 	});
 }
 
-void UBPE_MetadataCollection::ForEachVisibleProperty(TFunctionRef<FForEachVisiblePropertySignature> Functor) const
+void UNeatMetadataCollection::ForEachVisibleProperty(TFunctionRef<FForEachVisiblePropertySignature> Functor) const
 {
 	for (const FProperty* Prop : TFieldRange<FProperty>(GetClass()))
 	{
@@ -42,7 +42,7 @@ void UBPE_MetadataCollection::ForEachVisibleProperty(TFunctionRef<FForEachVisibl
 	}
 }
 
-bool UBPE_MetadataCollection::IsRelevantForProperty(const FProperty& InProperty) const
+bool UNeatMetadataCollection::IsRelevantForProperty(const FProperty& InProperty) const
 {
 	if (const FArrayProperty* AsArray = CastField<FArrayProperty>(&InProperty))
 	{
@@ -64,7 +64,7 @@ bool UBPE_MetadataCollection::IsRelevantForProperty(const FProperty& InProperty)
 	return IsRelevantForContainedProperty(InProperty);
 }
 
-TSharedPtr<SWidget> UBPE_MetadataCollection::CreateValueWidgetForProperty(const TSharedRef<IPropertyHandle>& InHandle)
+TSharedPtr<SWidget> UNeatMetadataCollection::CreateValueWidgetForProperty(const TSharedRef<IPropertyHandle>& InHandle)
 {
 	return nullptr;
 }
@@ -96,7 +96,7 @@ namespace
 	}
 }
 
-TOptional<FString> UBPE_MetadataCollection::ExportValueForProperty(FProperty& Property) const
+TOptional<FString> UNeatMetadataCollection::ExportValueForProperty(FProperty& Property) const
 {
 	if (const FBoolProperty* AsBool = CastField<FBoolProperty>(&Property))
 	{
@@ -136,7 +136,7 @@ TOptional<FString> UBPE_MetadataCollection::ExportValueForProperty(FProperty& Pr
 	return Value;
 }
 
-void UBPE_MetadataCollection::ImportValueForProperty(const FProperty& Property, const FString& Value)
+void UNeatMetadataCollection::ImportValueForProperty(const FProperty& Property, const FString& Value)
 {
 	if (const FBoolProperty* BoolProp = CastField<FBoolProperty>(&Property))
 	{
@@ -153,7 +153,7 @@ void UBPE_MetadataCollection::ImportValueForProperty(const FProperty& Property, 
 	}
 }
 
-void UBPE_MetadataCollection::InitializeValueForProperty(const FProperty& Property)
+void UNeatMetadataCollection::InitializeValueForProperty(const FProperty& Property)
 {
 	for (int32 Idx = 0; Idx < Property.ArrayDim; Idx++)
 	{
@@ -163,7 +163,7 @@ void UBPE_MetadataCollection::InitializeValueForProperty(const FProperty& Proper
 	}
 }
 
-void UBPE_MetadataCollection::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
+void UNeatMetadataCollection::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
 {
 	UObject::PostEditChangeProperty(PropertyChangedEvent);
 
@@ -183,12 +183,12 @@ void UBPE_MetadataCollection::PostEditChangeProperty(FPropertyChangedEvent& Prop
 	}
 }
 
-bool UBPE_MetadataCollection::IsPropertyVisible(const FProperty& Property) const
+bool UNeatMetadataCollection::IsPropertyVisible(const FProperty& Property) const
 {
 	return !Property.HasAnyPropertyFlags(CPF_DisableEditOnInstance);
 }
 
-bool UBPE_MetadataCollectionStruct::IsRelevantForContainedProperty(const FProperty& InProperty) const
+bool UNeatMetadataCollectionStruct::IsRelevantForContainedProperty(const FProperty& InProperty) const
 {
 	if (const FStructProperty* AsStruct = CastField<FStructProperty>(&InProperty))
 	{

@@ -2,4 +2,4 @@
 #pragma once
 #include "Logging/LogMacros.h"
 
-DECLARE_LOG_CATEGORY_EXTERN(LogBlueprintPropertyExtensions, Log, All);
+DECLARE_LOG_CATEGORY_EXTERN(LogNeatMetadata, Log, All);

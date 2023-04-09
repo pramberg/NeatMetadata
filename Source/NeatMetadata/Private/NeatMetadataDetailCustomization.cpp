@@ -1,21 +1,21 @@
 ﻿// Copyright Viktor Pramberg. All Rights Reserved.
 
 
-#include "BPE_VariableDetailCustomization.h"
+#include "NeatMetadataDetailCustomization.h"
 #include "DetailLayoutBuilder.h"
 #include "BlueprintEditorModule.h"
-#include "BPE_MetadataCollection.h"
-#include "BPE_Settings.h"
+#include "NeatMetadataCollection.h"
+#include "NeatMetadataSettings.h"
 #include "DetailCategoryBuilder.h"
 #include "DetailWidgetRow.h"
 #include "IDetailGroup.h"
 #include "Widgets/Input/SEditableText.h"
 #include "Widgets/Input/SEditableTextBox.h"
-#include "BPE_MetadataWrapper.h"
+#include "NeatMetadataWrapper.h"
 
-#define LOCTEXT_NAMESPACE "BPE_VariableDetailCustomization"
+#define LOCTEXT_NAMESPACE "NeatMetadataDetailCustomization"
 
-TSharedPtr<IDetailCustomization> BPE_VariableDetailCustomization::MakeInstance(TSharedPtr<IBlueprintEditor> InBlueprintEditor)
+TSharedPtr<IDetailCustomization> FNeatMetadataDetailCustomization::MakeInstance(TSharedPtr<IBlueprintEditor> InBlueprintEditor)
 {
 	const TArray<UObject*>* Objects = InBlueprintEditor.IsValid() ? InBlueprintEditor->GetObjectsCurrentlyBeingEdited() : nullptr;
 	if (!Objects)
@@ -35,14 +35,14 @@ TSharedPtr<IDetailCustomization> BPE_VariableDetailCustomization::MakeInstance(T
 	}
 
 	check(FinalBlueprint);
-	return MakeShared<BPE_VariableDetailCustomization>(FinalBlueprint);
+	return MakeShared<FNeatMetadataDetailCustomization>(FinalBlueprint);
 }
 
-BPE_VariableDetailCustomization::BPE_VariableDetailCustomization(UBlueprint* InBlueprint) : Blueprint(InBlueprint)
+FNeatMetadataDetailCustomization::FNeatMetadataDetailCustomization(UBlueprint* InBlueprint) : Blueprint(InBlueprint)
 {
 }
 
-void BPE_VariableDetailCustomization::CustomizeDetails(IDetailLayoutBuilder& DetailLayout)
+void FNeatMetadataDetailCustomization::CustomizeDetails(IDetailLayoutBuilder& DetailLayout)
 {
 	TArray<TWeakObjectPtr<UObject>> ObjectsBeingCustomized;
 	DetailLayout.GetObjectsBeingCustomized(ObjectsBeingCustomized);
@@ -53,7 +53,7 @@ void BPE_VariableDetailCustomization::CustomizeDetails(IDetailLayoutBuilder& Det
 		if (!PropertyBeingCustomized)
 			return;
 
-		FBPE_MetadataWrapper MetaWrapper {PropertyBeingCustomized, Blueprint};
+		FNeatMetadataWrapper MetaWrapper {PropertyBeingCustomized, Blueprint};
 		
 		DetailLayout.SortCategories([](const TMap<FName, IDetailCategoryBuilder*>& InAllCategoryMap)
 		{
@@ -71,7 +71,7 @@ void BPE_VariableDetailCustomization::CustomizeDetails(IDetailLayoutBuilder& Det
 
 		TMap<FName, IDetailGroup*> GroupNameToGroup;
 		
-		GetDefault<UBPE_Settings>()->ForEachCollection([&](UBPE_MetadataCollection& Collection)
+		GetDefault<UNeatMetadataSettings>()->ForEachCollection([&](UNeatMetadataCollection& Collection)
 		{
 			if (!Collection.IsRelevantForProperty(*PropertyBeingCustomized))
 			{
@@ -100,7 +100,7 @@ void BPE_VariableDetailCustomization::CustomizeDetails(IDetailLayoutBuilder& Det
 					FText Tooltip = GroupPtr ? FText() : CollectionClass.GetToolTipText();
 					if (GroupPtr)
 					{
-						if (const FText* FoundTooltip = GetDefault<UBPE_Settings>()->GroupTooltips.Find(GroupName))
+						if (const FText* FoundTooltip = GetDefault<UNeatMetadataSettings>()->GroupTooltips.Find(GroupName))
 						{
 							Tooltip = *FoundTooltip;
 						}
@@ -143,7 +143,7 @@ void BPE_VariableDetailCustomization::CustomizeDetails(IDetailLayoutBuilder& Det
 			});
 		});
 		
-		if (!PropertyBeingCustomized->GetMetaDataMap() || !GetDefault<UBPE_UserSettings>()->bShowAllMetadataCategory)
+		if (!PropertyBeingCustomized->GetMetaDataMap() || !GetDefault<UNeatMetadataUserSettings>()->bShowAllMetadataCategory)
 			return;
 
 		IDetailGroup& Group = MetadataCategory.AddGroup("All Metadata", LOCTEXT("All Metadata", "All Metadata"));
