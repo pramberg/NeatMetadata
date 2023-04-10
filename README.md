@@ -1,6 +1,16 @@
 # <img src="Resources/Icon128.png" style="height:1.0em;" align="center"/> Neat Metadata
 Editor extension to allow various metadata to be used in Blueprints that is otherwise only available in C++.
 
+## Examples
+|                                            |
+|:-------------------------------------------|
+| Class Picker                               |
+| ![](Documentation/Example_ClassPicker.png) |
+| Get Options                                |
+| ![](Documentation/Example_Text.png)        |
+| Gameplay Tags                              |
+| ![](Documentation/Example_GameplayTag.png) |
+
 ## Supported Metadata
 <table>
   <tr><th colspan="3">General</th></tr>
