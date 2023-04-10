@@ -2,6 +2,7 @@
 Editor extension to allow various metadata to be used in Blueprints that is otherwise only available in C++.
 
 ## Examples
+Some of the possibilities that this plugin exposes. Look at the [supported metadata](#supported-metadata) table to see all available metadata.
 |                                            |
 |:-------------------------------------------|
 | Class Picker                               |
