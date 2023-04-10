@@ -3,7 +3,7 @@ Editor extension to allow various metadata to be used in Blueprints that is othe
 
 ## Supported Metadata
 <table>
-  <tr style="text-align: left;"><th colspan="3" style="text-align: left;">General</th></tr>
+  <tr><th colspan="3">General</th></tr>
   <tr><th>Metadata</th><th>Type</th><th>Description</th></tr>
 
   <tr><td><code>Categories</code></td>  <td><code>GameplayTag</code></td>  <td>The root gameplay tag that can be selected.</td></tr>
@@ -15,7 +15,7 @@ Editor extension to allow various metadata to be used in Blueprints that is othe
   <tr><td><code>AllowPreserveRatio</code></td><td><code>Vector</code> <code>Vector2D</code> <code>Vector4</code> <code>Rotator</code></td><td>If enabled, shows the preserve aspect ratio button on this property.</td></tr>
   <tr><td><code>RowType</code></td><td><code>DataTableRowHandle</code></td><td>The type of struct that can be specified for a data table.</td></tr>
 
-  <tr><th colspan="3" style="text-align: left;">Edit Conditions</th></tr>
+  <tr><th colspan="3">Edit Conditions</th></tr>
   <tr><th>Metadata</th><th>Type</th><th>Description</th></tr>
 
   <tr><td><code>EditCondition</code></td><td>Any</td><td>Disable editing of the variable based on some condition.</td></tr>
@@ -23,7 +23,7 @@ Editor extension to allow various metadata to be used in Blueprints that is othe
   <tr><td><code>InlineEditConditionToggle</code></td><td><code>bool</code></td><td>Display the checkbox used as edit condition on the same row as the property.</td></tr>
   <tr><td><code>HideEditConditionToggle</code></td><td>Any</td><td>Hide the inline checkbox on this property.</td></tr>
 
-  <tr><th colspan="3" style="text-align: left;">Numeric</th></tr>
+  <tr><th colspan="3">Numeric</th></tr>
   <tr><th>Metadata</th><th>Type</th><th>Description</th></tr>
 
   <tr><td><code>Units</code></td><td><code>Float</code> <code>Integer</code> <code>Integer64</code> <code>Byte</code></td><td>Choose what unit a property represents. (Meters, centimeters, degrees, bytes, etc.)</td></tr>
@@ -37,28 +37,28 @@ Editor extension to allow various metadata to be used in Blueprints that is othe
   <tr><td><code>ArrayClamp</code></td><td><code>Float</code> <code>Integer</code> <code>Integer64</code> <code>Byte</code></td><td>The name of an array property that this property will be clamped to.</td></tr>
 
 
-  <tr><th colspan="3" style="text-align: left;">Text</th></tr>
+  <tr><th colspan="3">Text</th></tr>
   <tr><th>Metadata</th><th>Type</th><th>Description</th></tr>
 
   <tr><td><code>GetOptions</code></td><td><code>String</code> <code>Name</code></td><td>Create a dropdown of possible values that are allowed to be selected.</td></tr>
   <tr><td><code>PasswordField</code></td><td><code>String</code> <code>Name</code> <code>Text</code></td><td>Indicates that this field represents a password, and will be displayed using asterisks (*).</td></tr>
   <tr><td><code>MaxLength</code></td><td><code>String</code> <code>Name</code> <code>Text</code></td><td>The maximum number of characters that are allowed.</td></tr>
   
-  <tr><th colspan="3" style="text-align: left;">Directory Path</th></tr>
+  <tr><th colspan="3">Directory Path</th></tr>
   <tr><th>Metadata</th><th>Type</th><th>Description</th></tr>
 
   <tr><td><code>RelativePath</code></td><td><code>DirectoryPath</code></td><td>Should the path be relative to the engine directory. By default the path is absolute.</td></tr>
   <tr><td><code>ContentDir</code></td><td><code>DirectoryPath</code></td><td>Should the path be relative to ContentDir, in this format: "/Game/Path/To/Dir". Uses a custom widget that only shows content paths.</td></tr>
   <tr><td><code>RelativeToGameContentDir</code></td><td><code>DirectoryPath</code></td><td>Should the path be relative to the game directory, i.e. for "Content/Path/To/Dir" it returns "Path/To/Dir". The path must be inside the game directory.</td></tr>
 
-  <tr><th colspan="3" style="text-align: left;">File Path</th></tr>
+  <tr><th colspan="3">File Path</th></tr>
   <tr><th>Metadata</th><th>Type</th><th>Description</th></tr>
 
   <tr><td><code>LongPackageName</code></td><td><code>FilePath</code></td><td>Should the path be a LongPackageName, i.e. "/Game/Path/To/File"? Otherwise the path will be relative to engine directory.</td></tr>
   <tr><td><code>RelativeToGameDir</code></td><td><code>FilePath</code></td><td>Should the path be relative to the game directory, i.e. "Content/Path/To/File.extension"? Otherwise the path will be relative to engine directory.</td></tr>
   <tr><td><code>FilePathFilter</code></td><td><code>FilePath</code></td><td>Describes what file types should show up in the file picker.</td></tr>
 
-  <tr><th colspan="3" style="text-align: left;">Asset Picker</th></tr>
+  <tr><th colspan="3">Asset Picker</th></tr>
   <tr><th>Metadata</th><th>Type</th><th>Description</th></tr>
 
   <tr><td><code>RequiredAssetDataTags</code></td><td><code>Object</code> <code>Soft Object</code></td><td>Asset registry metadata tags that are required to exist in order to show the asset. This can be very useful on vast amount of properties.</td></tr>
@@ -69,7 +69,7 @@ Editor extension to allow various metadata to be used in Blueprints that is othe
   <tr><td><code>AllowedClasses</code></td><td><code>Object</code> <code>Soft Object</code></td><td>Classes that are allowed to be selected. Mostly useful on Object properties where you may want both Materials and Textures to be selectable.</td></tr>
   <tr><td><code>DisallowedClasses</code></td><td><code>Object</code> <code>Soft Object</code></td><td>Classes that are not allowed to be displayed. Say you want to display all Textures, except for TextureLightProfiles. Then you'd specify TextureLightProfile here.</td></tr>
 
-  <tr style="text-align: left;"><th colspan="3" style="text-align: left;">Class Picker</th></tr>
+  <tr><th colspan="3">Class Picker</th></tr>
   <tr><th>Metadata</th><th>Type</th><th>Description</th></tr>
 
   <tr><td><code>AllowAbstract</code></td><td><code>Class</code> <code>Soft Class</code></td><td>Whether to allow abstract classes to be selected.</td></tr>
@@ -81,20 +81,20 @@ Editor extension to allow various metadata to be used in Blueprints that is othe
   <tr><td><code>HideViewOptions</code></td><td><code>Class</code> <code>Soft Class</code></td><td>Whether to hide the view options button in the menu.</td></tr>
   <tr><td><code>MustImplement</code></td><td><code>Class</code> <code>Soft Class</code></td><td>Specifies an interface that classes must implement in order to be selectable.</td></tr>
 
-  <tr><th colspan="3" style="text-align: left;">Array</th></tr>
+  <tr><th colspan="3">Array</th></tr>
   <tr><th>Metadata</th><th>Type</th><th>Description</th></tr>
 
   <tr><td><code>TitleProperty</code></td><td>Array variables</td><td>Determines the format of the header on each array element.</td></tr>
   <tr><td><code>NoElementDuplicate</code></td><td>Array variables</td><td>Removes the possibility to use Duplicate on an element.</td></tr>
   <tr><td><code>EditFixedOrder</code></td><td>Array variables</td><td>Removes the possibility to reorder elements in the array.</td></tr>
 
-  <tr><th colspan="3" style="text-align: left;">Map</th></tr>
+  <tr><th colspan="3">Map</th></tr>
   <tr><th>Metadata</th><th>Type</th><th>Description</th></tr>
 
   <tr><td><code>ReadOnlyKeys</code></td><td>Map variables</td><td>Makes the keys of this property read only.</td></tr>
   <tr><td><code>ForceInlineRow</code></td><td>Map variables</td><td>Forces the key and value to be displayed on the same row. Some complicated properties, like GameplayTags may otherwise be placed on multiple rows.</td></tr>
 
-  <tr><th colspan="3" style="text-align: left;">Curves</th></tr>
+  <tr><th colspan="3">Curves</th></tr>
   <tr><th>Metadata</th><th>Type</th><th>Description</th></tr>
 
   <tr><td><code>XAxisName</code></td><td><code>RuntimeFloatCurve</code> <code>RuntimeVectorCurve</code> <code>RuntimeLinearColorCurve</code></td><td>The name of the X-axis of the curve.</td></tr>
