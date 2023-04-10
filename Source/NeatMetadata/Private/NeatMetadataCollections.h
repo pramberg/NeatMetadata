@@ -568,7 +568,7 @@ public:
 
 	// The maximum number of characters that are allowed.
 	UPROPERTY(EditAnywhere, Category = "Text")
-    int32 MaxLength = 0;
+	int32 MaxLength = 0;
 
 protected:
 	virtual bool IsRelevantForContainedProperty(const FProperty& InProperty) const override;
