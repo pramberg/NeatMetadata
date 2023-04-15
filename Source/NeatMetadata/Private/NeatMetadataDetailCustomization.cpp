@@ -128,9 +128,22 @@ void FNeatMetadataDetailCustomization::CustomizeDetails(IDetailLayoutBuilder& De
 
 			Collection.InitializeFromMetadata(MetaWrapper);
 
+			const FAddPropertyParams Params = FAddPropertyParams()
+				.UniqueId(FName(FString::Printf(TEXT("%s_%s"), *Blueprint->GetName(), *PropertyBeingCustomized->GetName())))
+				.HideRootObjectNode(true)
+				.CreateCategoryNodes(false);
+
+			IDetailPropertyRow* Row = MetadataCategory.AddExternalObjects({ &Collection }, EPropertyLocation::Default, Params);
+			check(Row && Row->GetPropertyHandle());
+			
+			// This seems incredibly dirty, but I haven't found a workaround.
+			// We want to add our collection so there are property handles for all properties, but we don't want to show any of them by default.
+			// That's how we can show/hide properties depending on the state of a collection.
+			Row->Visibility(EVisibility::Collapsed);
+			
 			Collection.ForEachVisibleProperty([&](const FProperty& Property)
 			{
-				if (const TSharedPtr<IPropertyHandle> Handle = DetailLayout.AddObjectPropertyData({ &Collection }, Property.GetFName()))
+				if (const TSharedPtr<IPropertyHandle> Handle = Row->GetPropertyHandle()->GetChildHandle(Property.GetFName()))
 				{
 					IDetailPropertyRow& CreatedRow = Group ? Group->AddPropertyRow(Handle.ToSharedRef()) : MetadataCategory.AddProperty(Handle);
 					if (const TSharedPtr<SWidget> ValueWidget = Collection.CreateValueWidgetForProperty(Handle.ToSharedRef()))
